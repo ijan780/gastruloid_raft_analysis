@@ -6,22 +6,21 @@ import os
 from scipy.io import loadmat
 import natsort
 
-from PIL import Image
-from matplotlib import pyplot as plt
 from skimage import io
 from skimage.transform import rescale
 from skimage.filters import gaussian
 from skimage.exposure import rescale_intensity
 from skimage.util import img_as_ubyte
 import numpy as np
+import tifffile as tiff
 
 
 def stitchArray(exp):
     # Load Positions.mat (real world coord of imaging frame centers) and initialize output path for stitched images.
     positionsPath = Path(exp.dataPath / 'data' / 'Positions.mat')
     positions = loadmat(positionsPath)
-    outPath = Path(f'{exp.dataPath}_Analysis') / 'Stitched Images'
-    os.makedirs(outPath, exist_ok=True)
+    outPath_main = Path(f'{exp.dataPath}_Analysis') / 'Stitched Images'
+    os.makedirs(outPath_main, exist_ok=True)
 
     # Stitch images for each array at each time point and channel.
     # ch_stitch = ['BF']
@@ -53,10 +52,8 @@ def stitchArray(exp):
                 # print(f'There are {len(imgPaths)} paths for this channel: {imgPaths}')
 
                 stitchedImg = tile_stitch(exp, posDict, imgPaths, ch)
-
-                stitchedImg.save(Path(outPath / f'array{arr + 1}_timepoint{tp:02}_{ch}.tif'),
-                                 'TIFF')
-                # stitchedImg.show()
+                outPath = outPath_main / f'array{arr + 1}_timepoint{tp:02}_{ch}.tif'
+                tiff.imwrite(outPath, stitchedImg)
 
                 # print(f'Finished stitching images for Array {arr + 1} at '
                 #       f'Time Point {tp} in '
@@ -143,11 +140,12 @@ def tile_stitch(exp, posDict, imgPaths, ch):
     bottom = y - y_offset + tileSize[1]
     stitchedImg = stitchedImg[0:int(bottom), 0:int(right)]
 
-    background = gaussian(stitchedImg, sigma=30, preserve_range=True)
-    stitchedImg = stitchedImg / background
+    background = gaussian(stitchedImg, sigma=30)
+    background = rescale_intensity(background, out_range=(0, 1))
+
+    epsilon = 1e-10 # avoid dividing by 0
+    stitchedImg = stitchedImg / (background + epsilon)
     stitchedImg = rescale_intensity(stitchedImg)
     stitchedImg = img_as_ubyte(stitchedImg)
-    stitchedImg = Image.fromarray(stitchedImg)
-    # stitchedImg.show()
 
     return stitchedImg

@@ -10,7 +10,6 @@ from stitchArray import stitchArray
 from cropRafts import cropRafts
 from analyzeFluor_CalcHoechst import analyzeFluor
 
-
 # Request user input for data folder absolute path and time intervals.
 dataPath = input('Enter data folder absolute path: ')
 # dataPath = Path(r'C:\Users\ianja\OneDrive - UW\Allbritton Lab\MVX System\Image Analysis Pipeline\220815_ImagingTest')

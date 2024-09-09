@@ -4,10 +4,9 @@ from pathlib import Path
 import os
 from scipy.io import loadmat
 
-from skimage import io, filters, exposure, util
+from skimage import io
 import numpy as np
-from PIL import Image
-
+import tifffile as tiff
 
 def cropRafts(exp):
     # Initialize numRafts and channels.
@@ -15,9 +14,9 @@ def cropRafts(exp):
     channels = exp.channels
 
     # Load Loc_cell.mat (links local/global indices) and Centroid_cell.mat (raft px location within subsection).
-    loc_cell2 = loadmat(Path(exp.dataPath / 'data' / 'Loc_cell2.mat'))
+    loc_cell2 = loadmat(exp.dataPath / 'data' / 'Loc_cell2.mat')
     loc_cell2 = loc_cell2['Loc_cell2']
-    centroid_cell = loadmat(Path(exp.dataPath) / 'data' / 'Centroid_cell.mat')
+    centroid_cell = loadmat(exp.dataPath / 'data' / 'Centroid_cell.mat')
     centroid_cell = centroid_cell['Centroid_cell']
 
     # Set up main output folder for individual cropped raft images.
@@ -26,35 +25,35 @@ def cropRafts(exp):
 
     # Loop through loc_cell for each raft and locate corresponding array subsection folder.
     for arr in range(exp.numArrs):
-        for tp in range(exp.numTimePoints):
-            for ch in channels:
-                raftCount = 0
-                for raft in range(0, numRafts):
+        raftCount = 0
+        for raft in range(0, numRafts):
+            # Check if raft exists at every time point.
+            loc_cell2_raft = [tp[raft] for tp in loc_cell2[1, :]]
+            loc_idx_raft = [tp[3] for tp in loc_cell2_raft]
+            if 0 in loc_idx_raft:
+                continue
+
+            raftCount += 1
+            crop_tp = []
+            # Crop raft at each time point for all channels then stack into single TIFF as (tp, c, y, x)
+            for tp in range(exp.numTimePoints):
+                crop_ch = []
+                for ch in channels:
                     # Identify imaging row/col and local index.
                     img_row = loc_cell2[arr, tp][raft, 1] - 1
                     img_col = loc_cell2[arr, tp][raft, 2] - 1
                     loc_idx = loc_cell2[arr, tp][raft, 3] - 1
 
-                    # Check if raft found (first col = 1) and if raft location in centroid_cell.
-                    if loc_cell2[arr, tp][raft, 0] != 0 and loc_idx < len(centroid_cell[arr, tp][img_row, img_col]):
-                        raftCount += 1
-                        raftCrop = crop(exp, img_row, img_col, loc_idx, centroid_cell, arr, tp, ch)
+                    raftCrop = crop(exp, img_row, img_col, loc_idx, centroid_cell, arr, tp, ch)
+                    crop_ch.append(raftCrop)
+                stacked_ch = np.stack(crop_ch, axis=0)
+                crop_tp.append(stacked_ch)
+            stacked_img = np.stack(crop_tp, axis=0)
+            outPath = outPath_main / f'array{arr + 1}_raft{(raft + 1):03}.tif'
+            tiff.imwrite(outPath,stacked_img)
 
-                        # Save cropped image to subfolders for each specific Array 'arr', Time Point 'tp', and Channel 'ch'.
-                        outPath = Path(outPath_main / f'array{arr + 1}_timepoint{tp:02}_{ch}')
-                        os.makedirs(outPath, exist_ok=True)
-                        raftCrop.save(Path(outPath /
-                                           f'array{arr + 1}_'
-                                           f'timepoint{tp:02}_'
-                                           f'{ch}_'
-                                           f'raft{(raft + 1):03}.tif'),
-                                       'TIFF')
-                        raftCrop.close()
-
-                print(f'(array {arr + 1}) Cropped '
-                      f'{raftCount} rafts '
-                      f'at Time Point {tp:03} '
-                      f'for Channel {ch}.')
+        print(f'(array {arr + 1}) Cropped '
+              f'{raftCount} rafts ')
 
     print('Crop complete.')
 
@@ -79,5 +78,4 @@ def crop(exp, img_row, img_col, loc_idx, centroid_cell, arr, tp, ch):
     right = raft_loc_x + (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
 
     raftCrop = img[int(top):int(bottom), int(left):int(right)]
-    raftCrop = Image.fromarray(raftCrop)
     return raftCrop

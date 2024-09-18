@@ -13,9 +13,11 @@ from analyzeFluor_CalcHoechst import analyzeFluor
 # Request user input for data folder absolute path and time intervals.
 dataPath = input('Enter data folder absolute path: ')
 # dataPath = Path(r'C:\Users\ianja\OneDrive - UW\Allbritton Lab\MVX System\Image Analysis Pipeline\220815_ImagingTest')
-interval = input('Enter duration of time interval (hr): ')
-interval = float(interval)
+interval = float(input('Enter duration of time interval (hr): '))
 currExp = ExpMeta(dataPath, interval)
+channels_tl = []
+channels_tl = input('Enter time-series channels separated by spaces (all, b, g, r, fr): ')
+channels_tl = channels_tl.split()
 
 # Determine number of arrays.
 currExp.numArrs = len(os.listdir(dataPath)) - 1 # account for "data" subfolder
@@ -39,7 +41,9 @@ for filename in os.listdir(randomImgFolder):
     patternResult = parse(pattern, filename)
     if patternResult['channel'] not in currExp.channels:
         currExp.channels.append(patternResult['channel'])
+currExp.set_channels_tl(channels_tl=channels_tl, flag_all=flag_all)
 print(f'Channels ({len(currExp.channels)} total): {currExp.channels}')
+print(f'Channels Time-Series ({len(currExp.channels_tl)} total): {currExp.channels_tl}')
 print('')
 
 # print('The new experiment metadata object is properly created.')

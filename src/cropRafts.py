@@ -1,7 +1,6 @@
 # cropRafts.py - Locates and crops individual rafts for image analysis.
 
 from pathlib import Path
-import os
 from scipy.io import loadmat
 
 from skimage import io
@@ -11,7 +10,8 @@ import tifffile as tiff
 def cropRafts(exp):
     # Initialize numRafts and channels.
     numRafts = exp.arrDim[2] ** 2
-    channels = exp.channels
+    ch_end = exp.channels_end
+    ch_tl = exp.channels_tl
 
     # Load Loc_cell.mat (links local/global indices) and Centroid_cell.mat (raft px location within subsection).
     loc_cell2 = loadmat(exp.dataPath / 'data' / 'Loc_cell2.mat')
@@ -21,7 +21,7 @@ def cropRafts(exp):
 
     # Set up main output folder for individual cropped raft images.
     outPath_main = Path(f'{exp.dataPath}_Analysis') / 'Individual Raft Images'
-    os.makedirs(outPath_main, exist_ok=True)
+    outPath_main.mkdir(exist_ok=True)
 
     # Loop through loc_cell for each raft and locate corresponding array subsection folder.
     for arr in range(exp.numArrs):
@@ -35,22 +35,31 @@ def cropRafts(exp):
 
             raftCount += 1
             crop_tp = []
-            # Crop raft at each time point for all channels then stack into single TIFF as (tp, c, y, x)
+            # Crop raft at each time point for all time-lapse channels then stack into single TIFF as (tp, c, y, x)
             for tp in range(exp.numTimePoints):
-                crop_ch = []
-                for ch in channels:
-                    # Identify imaging row/col and local index.
-                    img_row = loc_cell2[arr, tp][raft, 1] - 1
-                    img_col = loc_cell2[arr, tp][raft, 2] - 1
-                    loc_idx = loc_cell2[arr, tp][raft, 3] - 1
+                # Identify imaging row/col and local index.
+                img_row = loc_cell2[arr, tp][raft, 1] - 1
+                img_col = loc_cell2[arr, tp][raft, 2] - 1
+                loc_idx = loc_cell2[arr, tp][raft, 3] - 1
 
+                crop_ch = []
+                for ch in ch_tl:
                     raftCrop = crop(exp, img_row, img_col, loc_idx, centroid_cell, arr, tp, ch)
                     crop_ch.append(raftCrop)
                 stacked_ch = np.stack(crop_ch, axis=0)
                 crop_tp.append(stacked_ch)
-            stacked_img = np.stack(crop_tp, axis=0)
-            outPath = outPath_main / f'array{arr + 1}_raft{(raft + 1):03}.tif'
-            tiff.imwrite(outPath,stacked_img)
+            tl_img = np.stack(crop_tp, axis=0)
+            outPath_tl = outPath_main / 'Time-lapse' / f'array{arr + 1}_raft{(raft + 1):03}_tl.tif'
+            tiff.imwrite(outPath_tl, tl_img)
+
+            crop_ch = []
+            for ch in ch_end:
+                raftCrop = crop(exp, img_row, img_col, loc_idx, centroid_cell,
+                                arr, (exp.numTimePoints - 1), ch)
+                crop_ch.append(raftCrop)
+            end_img = np.stack(crop_ch, axis=0)
+            outPath_end = outPath_main / 'Endpoint' / f'array{arr + 1}_raft{(raft + 1):03}_end.tif'
+            tiff.imwrite(outPath_end, end_img)
 
         print(f'(array {arr + 1}) Cropped '
               f'{raftCount} rafts ')
@@ -69,13 +78,13 @@ def crop(exp, img_row, img_col, loc_idx, centroid_cell, arr, tp, ch):
                     f'{arr + 1}' /
                     f'{img_row + 1}x{img_col + 1}' /
                     f'{tp:02}_{ch}.tif')
-    img = io.imread(imgPath)
 
-    # Crop image to specific raft.
-    top = raft_loc_y - (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
-    bottom = raft_loc_y + (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
-    left = raft_loc_x - (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
-    right = raft_loc_x + (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
+    with tiff.TiffFile(imgPath) as img:
+        # Crop image to specific raft.
+        top = raft_loc_y - (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
+        bottom = raft_loc_y + (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
+        left = raft_loc_x - (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
+        right = raft_loc_x + (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
 
-    raftCrop = img[int(top):int(bottom), int(left):int(right)]
+        raftCrop = img[int(top):int(bottom), int(left):int(right)]
     return raftCrop

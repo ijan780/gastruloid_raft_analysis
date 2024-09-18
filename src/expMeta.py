@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 class ExpMeta(object):
-    def __init__(self, dir = '', timeInt = 99.0, timeOffset = 0):
+    def __init__(self, data_dir, channels_tl, mask_dir = True, timeInt = 99.0, timeOffset = 0):
         # Fairly consistent variables
         self.arrDim = [800, 100, 23]  # [side dimensions, gap spacing, # rafts in single row]
         # self.mag = 2.5
@@ -15,12 +15,19 @@ class ExpMeta(object):
         # self.pattCropRaft = 'array{arr}_timepoint{timePoint}_{channel}_raft{raft}.tif'
 
         # Variables that change for each experiment
-        self.set_dataPath(dir)
+        self.set_dataPath(data_dir)
+        self.set_maskPath(mask_dir)
         self.set_interval(timeInt)
         self.set_timeOffset(timeOffset)
         self.numArrs = 1
         self.numTimePoints = 1
         self.channels = ['BF']
+        self.channels_abb = {'b': 'Blue',
+                             'v': 'Violet',
+                             'g': 'Green',
+                             'r': 'Red',
+                             'fr': 'FarRed'}
+        self.set_tl_end(channels_tl)
         # self.channels = ['BF'] # no flat-field correction
 
         # Variables that modify behavior of image analysis
@@ -43,6 +50,13 @@ class ExpMeta(object):
             raise ValueError('Time offset has to be positive!')
         self.timeOffset = timeOffset
 
+    def set_tl_end(self, channels_tl):
+        if (self.numTimePoints == 1) or channels_tl[0] == 'all':
+            self.channels_tl = self.channels
+        else:
+            self.channels_tl = [self.channels_abb[ch] for ch in channels_tl]
+            self.channels_end = [ch for ch in self.channels if ch not in self.channels_tl]
+
     def write_metadata(self):
         totalDuration = (self.interval * (self.numTimePoints - 1))
         properties = ['Data Path',
@@ -52,7 +66,9 @@ class ExpMeta(object):
                       'Time Offset (hrs)',
                       'Number of Array(s)',
                       'Number of Channels',
-                      'Channels',
+                      'Channels (total)',
+                      'Channels (tl)',
+                      'Channels (end)',
                       'Magnification',
                       'Pixel Size',
                       'Scale for Stitched Composites']
@@ -64,6 +80,8 @@ class ExpMeta(object):
                 self.numArrs,
                 len(self.channels),
                 self.channels,
+                self.channels_tl,
+                self.channels_end,
                 self.mag,
                 self.pxSize,
                 self.tileScale]

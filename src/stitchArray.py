@@ -6,13 +6,12 @@ import os
 from scipy.io import loadmat
 import natsort
 
-from skimage import io
+import tifffile as tiff
 from skimage.transform import rescale
 from skimage.filters import gaussian
 from skimage.exposure import rescale_intensity
 from skimage.util import img_as_ubyte
 import numpy as np
-import tifffile as tiff
 
 
 def stitchArray(exp):
@@ -20,7 +19,7 @@ def stitchArray(exp):
     positionsPath = Path(exp.dataPath / 'data' / 'Positions.mat')
     positions = loadmat(positionsPath)
     outPath_main = Path(f'{exp.dataPath}_Analysis') / 'Stitched Images'
-    os.makedirs(outPath_main, exist_ok=True)
+    outPath_main.mkdir(exist_ok=True)
 
     # Stitch images for each array at each time point and channel.
     # ch_stitch = ['BF']
@@ -91,14 +90,19 @@ def tile_stitch(exp, posDict, imgPaths, ch):
     #       f'{ch} channel...')
 
     # Initialize parameters for tiled image.
-    img = io.imread(imgPaths[0])
-    tileSize = (int(img.shape[0] * exp.tileScale), int(img.shape[1] * exp.tileScale))
+    with tiff.TiffFile(imgPaths[0]) as img:
+        tileSize = (int(img.shape[0] * exp.tileScale), int(img.shape[1] * exp.tileScale))
 
     distArr = (exp.arrDim[2] * exp.arrDim[0]) + ((exp.arrDim[2] - 1) * exp.arrDim[1])  # distance across array (um)
     outputSize = int(distArr / exp.pxSize * (exp.tileScale * 1.25))
     stitchedImg = np.zeros([outputSize, outputSize])
-    images = []
 
+    # Paste tiles into position with top-left image placed at (0, 0).
+    (x, y) = (0, 0)
+    x_offset = posDict[1]['x'] * exp.tileScale
+    y_offset = posDict[1]['y'] * exp.tileScale
+
+    # Set sigma values for specific channels.
     if ch == 'BF':
         sig = 15
     else:
@@ -106,34 +110,29 @@ def tile_stitch(exp, posDict, imgPaths, ch):
 
     # Resize and convert 16bit to 8bit images before storing in "images" list.
     # imgCount = 1
-    for image in imgPaths:
-        img_arr = io.imread(image)
-        img_arr = rescale(img_arr, exp.tileScale)
-        background = gaussian(img_arr, sigma=sig, preserve_range=True)
-        img_arr = img_arr / background
-        images.append(img_arr)
+    for idx, image in enumerate(imgPaths):
+        # Read each array section image.
+        with tiff.TiffFile(image) as img_sec:
+            img_sec = rescale(img_sec, exp.tileScale)
 
-        # print('Currently on img %s' % counter)
-        # imgCount += 1
-    # print(f'Finished processing {imgCount - 1} images.')
+            background = gaussian(img_sec, sigma=sig, preserve_range=True)
+            background = rescale_intensity(background, out_range=(0, 1))
+            epsilon = 1e-10  # avoid dividing by 0
+            img_ff = img_sec / (background + epsilon)
 
-    # Paste tiles into position with top-left image placed at (0, 0).
-    imgCount = 1
-    (x, y) = (0, 0)
-    x_offset = posDict[1]['x'] * exp.tileScale
-    y_offset = posDict[1]['y'] * exp.tileScale
-
-    for img in images:
-        (x, y) = (posDict[imgCount]['x'] * exp.tileScale, posDict[imgCount]['y'] * exp.tileScale)
-        # print(f'Img {imgCount} is located at ({x - x_offset},{y - y_offset})')
+        # Determine coordinates of array section.
+        (x, y) = (posDict[idx + 1]['x'] * exp.tileScale, posDict[idx + 1]['y'] * exp.tileScale)
+        # print(f'Img {idx + 1} is located at ({x - x_offset},{y - y_offset})')
         (new_x, new_y) = (int(x - x_offset), int(y - y_offset))
         if new_x < 0:
             new_x = 0
         if new_y < 0:
             new_y = 0
         # print(new_y, new_y+img.shape[0], new_x, new_x+img.shape[1])
-        stitchedImg[new_y:new_y+img.shape[0], new_x:new_x+img.shape[1]] = img
-        imgCount += 1
+        stitchedImg[new_y:new_y + img.shape[0], new_x:new_x + img.shape[1]] = img_ff
+
+        # print('Currently on img %s' % counter)
+    # print(f'Finished processing {idx + 1} images.')
 
     # Crop stitched image to the bottom right of array before returning stitched image.
     right = x - x_offset + tileSize[0]

@@ -23,14 +23,18 @@ def stitchArray(exp):
     ch_stitch = ['BF']
 
     # Load Positions.mat (real world coord of imaging frame centers) and initialize output dir for stitched images.
-    posDir_mask = exp.maskDir / 'data' / 'Positions.mat'
+    posDir_mask = exp.endDir / 'data' / 'Positions.mat'
     positions_mask = loadmat(posDir_mask)
-
     posDir = exp.dataDir / 'data' / 'Positions.mat'
     positions = loadmat(posDir)
-
-    orderTP = [0, (exp.numTimePoints - 1)]
+    orderTP = [0, (exp.numTimePoints - 1)] # just first and last time points
     # orderTP = list(range(exp.numTimePoints))
+
+    # Determine time point of mask.
+    if exp.dataDir == exp.endDir:
+        maskTP = exp.numTimePoints - 1
+    else:
+        maskTP = 0
 
     for arr in range(exp.numArrs):
         # Stitch mask channel first.
@@ -38,11 +42,7 @@ def stitchArray(exp):
         print(f'\t\tEndpoint - Channel {exp.channel_mask}')
         posDict_mask = img_pos(exp, arr, positions_mask)
         maskDirs = []
-        arrDir_mask = exp.maskDir / f'{arr + 1}'
-        if exp.dataDir == exp.maskDir:
-            maskTP = exp.numTimePoints - 1
-        else:
-            maskTP = 0
+        arrDir_mask = exp.endDir / f'{arr + 1}'
         for sub in os.listdir(arrDir_mask):
             maskDir = arrDir_mask / sub / f'{maskTP:02}_{exp.channel_mask}.tif'
             maskDirs.append(maskDir)
@@ -81,7 +81,7 @@ def stitchArray(exp):
     print(f'Stitched composites for '
           f'{exp.numArrs} array(s), '
           f'{exp.numTimePoints} Time Point(s), and '
-          f'{len(ch_stitch)} Channel(s).')
+          f'{len(ch_stitch) + 1} Channel(s).')
 
     print('Stitch complete.')
 
@@ -104,13 +104,13 @@ def img_pos(exp, arr, positions):
 
 
 # Stitch the images within imgDirs based on image locations.
-def tile_stitch(exp, posDict, imgDirs, ch):
+def tile_stitch(exp, posDict, dirs, ch):
     # print(f'Stitching images for Array {arr + 1} at '
     #       f'Time Point {tp} in '
     #       f'{ch} channel...')
 
     # Initialize parameters for tiled image.
-    with tiff.TiffFile(imgDirs[0]) as tif:
+    with tiff.TiffFile(dirs[0]) as tif:
         img = tif.asarray()
         tileSize = (int(img.shape[0] * exp.tileScale), int(img.shape[1] * exp.tileScale))
 
@@ -123,15 +123,12 @@ def tile_stitch(exp, posDict, imgDirs, ch):
     x_offset = posDict[1]['x'] * exp.tileScale
     y_offset = posDict[1]['y'] * exp.tileScale
 
-    # Set sigma values for specific channels.
-    if ch == 'BF':
-        sig = 15
-    else:
-        sig = 15
+    # Set sigma values for gaussian blur.
+    sig = 10
 
     # Resize and convert 16bit to 8bit images before storing in "images" list.
     # imgCount = 1
-    for idx, image in enumerate(imgDirs):
+    for idx, image in enumerate(dirs):
         # Read each array section image.
         with tiff.TiffFile(image) as tif:
             img = tif.asarray()
@@ -152,16 +149,10 @@ def tile_stitch(exp, posDict, imgDirs, ch):
 
     # print(f'Finished processing {idx + 1} images.')
 
-    # Crop stitched image to the bottom right of array before returning stitched image.
+    # Crop stitched image to the bottom right of array before returning rescaled 8bit stitched image.
     right = x - x_offset + tileSize[0]
     bottom = y - y_offset + tileSize[1]
     stitchedImg = stitchedImg[0:int(bottom), 0:int(right)]
-
-    # Second flat-field not useful.
-    # background = gaussian(stitchedImg, sigma=30)
-    # epsilon = 1e-10 # avoid dividing by 0
-    # stitchedImg = stitchedImg / (background + epsilon)
-
     stitchedImg = rescale_intensity(stitchedImg,
                                     in_range=(np.quantile(stitchedImg, q=0.05), np.quantile(stitchedImg, q=0.95)),)
     stitchedImg = img_as_ubyte(stitchedImg)

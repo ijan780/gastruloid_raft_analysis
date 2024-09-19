@@ -1,19 +1,18 @@
 # expMeta.py - Stores experiment metadata for Python functions to access.
 
 from pathlib import Path
+import os
 import pandas as pd
+from parse import parse
 
 class ExpMeta(object):
     def __init__(self,
                  dataDir: str,
-                 channels: list,
                  channel_mask: str,
                  channels_tl: list,
                  timeInt: float,
-                 maskDirSame = True,
+                 endDirSame = True,
                  timeOffset: float = 0.0,
-                 numArrs: int = 1,
-                 numTimePoints: int = 1,
                  ):
         # Fairly consistent variables
         self.arrDim = [800, 100, 23]  # [side dimensions, gap spacing, # rafts in single row]
@@ -24,17 +23,18 @@ class ExpMeta(object):
 
         # Variables that change for each experiment
         self.set_dataDir(dataDir)
-        self.set_maskDir(dataDir, maskDirSame)
+        self.set_endDir(endDirSame)
         self.analDir = Path(f'{self.dataDir}_Analysis')
         self.analDir.mkdir(exist_ok=True)
 
-        self.numArrs = numArrs
-        self.numTimePoints = numTimePoints
+        self.pattern = '{timePoint}_{channel}.tif'
+        firstFolder = self.find_firstFolder(dataDir)
+        self.set_numArrs()
+        self.set_numTimePoints(firstFolder)
 
         self.set_interval(timeInt)
         self.set_timeOffset(timeOffset)
 
-        self.channels = channels
         self.channels_abb = {'BF': 'BF',
                              'bf': 'BF',
                              'Blue': 'Blue',
@@ -47,8 +47,9 @@ class ExpMeta(object):
                              'r': 'Red',
                              'FarRed': 'FarRed',
                              'fr': 'FarRed'}
+        self.channels = self.find_channels(firstFolder)
         self.channel_mask = self.channels_abb[channel_mask]
-        self.set_tl_end(channels_tl)
+        self.set_tl_end(channels_tl, endDirSame)
 
         # Variables that modify behavior of image analysis
         self.tileScale = 0.1
@@ -59,11 +60,24 @@ class ExpMeta(object):
             raise ValueError('You forgot to enter a directory path!')
         self.dataDir = Path(dataDir)
 
-    def set_maskDir(self, dataDir, maskDirSame):
-        if maskDirSame:
-            self.maskDir = self.dataPath
+    def set_endDir(self, endDirSame):
+        if endDirSame:
+            self.endDir = self.dataDir
         else:
-            self.maskDir = Path(f'{dataDir}_Calcein')
+            self.endDir = Path(f'{self.dataDir}_Calcein') # TODO edit to _End
+
+    def find_firstFolder(self, dir):
+        return Path(dir) / '1' / '1x1'  # folder for first subsection.
+
+    def set_numArrs(self):
+        self.numArrs = len(os.listdir(self.dataDir)) - 1  # account for "data" subfolder
+        print(f'Number of arrays: {self.numArrs}')
+    
+    def set_numTimePoints(self, firstFolder):
+        lastImg = os.listdir(firstFolder)[-1]  # last image in folder for first subsection
+        patternResult = parse(self.pattern, lastImg)
+        self.numTimePoints = int(patternResult['timePoint']) + 1
+        print(f'Number of time points: {self.numTimePoints}')
 
     # Ensure that time interval input is positive.
     def set_interval(self, timeInt):
@@ -79,7 +93,16 @@ class ExpMeta(object):
             raise ValueError('Time offset has to be positive!')
         self.timeOffset = float(timeOffset)
 
-    def set_tl_end(self, channels_tl):
+    def find_channels(self, firstFolder):
+        channels = ['BF']
+        for filename in os.listdir(firstFolder):
+            patternResult = parse(self.pattern, filename)
+            if patternResult['channel'] not in channels:
+                channels.append(patternResult['channel'])
+        print(f'Channels ({len(channels)} total): {channels}')
+        return channels
+
+    def set_tl_end(self, channels_tl, endDirSame):
         if (self.numTimePoints == 1) or channels_tl[0] == 'none':
             self.channels_tl = []
             self.channels_end = self.channels
@@ -88,12 +111,17 @@ class ExpMeta(object):
             self.channels_end = []
         else:
             self.channels_tl = [self.channels_abb[ch] for ch in channels_tl]
-            self.channels_end = [ch for ch in self.channels if ch not in self.channels_tl]
+            if endDirSame:
+                self.channels_end = [ch for ch in self.channels if ch not in self.channels_tl]
+            else:
+                firstFolder_end = self.find_firstFolder(self.endDir)
+                channels_end = self.find_channels(firstFolder_end)
+                self.channels_end = channels_end[1:]
 
     def write_metadata(self):
         totalDuration = (self.interval * (self.numTimePoints - 1))
         properties = ['Data Dir',
-                      'Mask Dir',
+                      'End Dir',
                       'Analysis Dir',
                       'Time Interval (hrs)',
                       'Total Duration (hrs)',
@@ -109,7 +137,7 @@ class ExpMeta(object):
                       'Pixel Size',
                       'Scale for Stitched Composites']
         vals = [self.dataDir,
-                self.maskDir,
+                self.endDir,
                 self.analDir,
                 self.interval,
                 "{:.2f}".format(totalDuration),

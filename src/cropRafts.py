@@ -46,7 +46,6 @@ def cropRafts(exp):
     for arr in range(exp.numArrs):
         raftCount = 0
         for raft in range(0, numRafts):
-            print(f'Raft {raft + 1}')
             # Check if raft exists at every time point (including separate mask imaging) and if loc_idx is within num of rafts in centroid_cell.
             if endDirSame:
                 raft_loc_cell2 = [tp[raft] for tp in loc_cell2[arr, :]]
@@ -67,14 +66,15 @@ def cropRafts(exp):
             raft_loc_idx = [tp[3] for tp in raft_loc_cell2] # list of local indices for time-series
             # print(f'\t{raft_loc_idx}')
             # print(f'\t{raft_centroid_cell_count}')
-            raft_coord_exist = [a <= b for a, b in zip(raft_loc_idx, raft_centroid_cell_count)] # <= because MATLAB starts at 1
+            raft_coord_exist = [a <= b for a, b in zip(raft_loc_idx, raft_centroid_cell_count)] # a <= b because MATLAB starts at 1
             # print(f'\t{False in raft_coord_exist}')
 
             if (0 in raft_loc_idx) or (False in raft_coord_exist):
                 continue
             raftCount += 1
+            print(f'\t Array {arr + 1} Raft {raft + 1}')
 
-            # Crop raft at final time point for all endpoint channels then stack into single TIFF as (tp, c, y, x).
+            # Crop raft at final time point for all endpoint channels then stack into single TIFF as (c, y, x).
             crop_end = []
             # Identify imaging row/col and local index.
             img_row_end = loc_cell2_end[arr, endTP][raft, 1] - 1
@@ -87,10 +87,9 @@ def cropRafts(exp):
                                 arr, endTP, ch)
                 crop_end.append(raftCrop)
             end_img = np.stack(crop_end, axis=0)
-            end_img = np.expand_dims(end_img, axis=0)
             outDir_end_raft = outDir_end / f'array{arr + 1}_raft{(raft + 1):03}_end.tif'
             tiff.imwrite(outDir_end_raft, end_img,
-                         imagej=True, metadata={'axes': 'TCYX', 'Channels': ch_end})
+                         imagej=True, metadata={'axes': 'CYX', 'channels': ch_end})
 
             # Crop raft at each time point for all time-lapse channels then stack into single TIFF as (tp, c, y, x).
             crop_tp = []
@@ -132,11 +131,12 @@ def crop(exp, dir, img_row, img_col, loc_idx, centroid_cell, arr, tp, ch):
     with tiff.TiffFile(imgDir) as tif:
         img = tif.asarray()
 
-        # Crop image to specific raft.
-        top = raft_loc_y - (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
-        bottom = raft_loc_y + (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
-        left = raft_loc_x - (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
-        right = raft_loc_x + (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
+    # Crop image to specific raft.
+    top = raft_loc_y - (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
+    bottom = raft_loc_y + (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
+    left = raft_loc_x - (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
+    right = raft_loc_x + (0.89 * (exp.arrDim[0] / 2) / exp.pxSize)
 
-        raftCrop = img[int(top):int(bottom), int(left):int(right)]
+    raftCrop = img[int(top):int(bottom), int(left):int(right)]
+
     return raftCrop

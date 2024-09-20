@@ -13,7 +13,7 @@ from analyzeFluor_CalcHoechst import analyzeFluor
 # Load or create new experiment metadata object.
 while True:
     load_or_create = input('Load experiment? (y/n): ')
-    print('')
+    print()
     if load_or_create.lower() == 'y':
         print('LOADING EXPERIMENT...')
         metaDir = input('Enter data folder absolute path: ')
@@ -35,6 +35,7 @@ while True:
                           timeInt=interval,
                           endDirSame=endDirSame,
                           timeOffset=timeOffset)
+        print()
         break
 
     elif load_or_create.lower() == 'n':
@@ -68,7 +69,7 @@ while True:
         print(f'Channel mask: {currExp.channel_mask}')
         print(f'Channels time-series ({len(currExp.channels_tl)} total): {currExp.channels_tl}')
         print(f'Channels endpoint ({len(currExp.channels_end)} total): {currExp.channels_end}')
-        print('')
+        print()
 
         # Print out metadata.
         currExp.write_metadata()
@@ -77,21 +78,19 @@ while True:
     else:
         continue
 
-# Stitch images into composite.
-print('NOW STITCHING...')
-stitchArray(currExp)
-print('')
+# # Stitch images into composite.
+# print('NOW STITCHING...')
+# stitchArray(currExp)
+# print()
 
-# # Crops individual identified rafts.
-# print('NOW CROPPING TO RAFTS...')
-# cropRafts(currExp)
-# print('')
-
-
+# Crops individual identified rafts.
+print('NOW CROPPING TO RAFTS...')
+cropRafts(currExp)
+print()
 
 # # Performs fluorescence analysis.
 # print('NOW PERFORMING FLUORESCENCE ANALYSIS')
 # analyzeFluor(currExp, flag_finalTP=0)
-# print('')
+# print()
 
 print('PROCESSING COMPLETE.')

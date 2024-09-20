@@ -112,7 +112,7 @@ def tile_stitch(exp, posDict, dirs, ch):
     # Initialize parameters for tiled image.
     with tiff.TiffFile(dirs[0]) as tif:
         img = tif.asarray()
-        tileSize = (int(img.shape[0] * exp.tileScale), int(img.shape[1] * exp.tileScale))
+    tileSize = (int(img.shape[0] * exp.tileScale), int(img.shape[1] * exp.tileScale))
 
     distArr = (exp.arrDim[2] * exp.arrDim[0]) + ((exp.arrDim[2] - 1) * exp.arrDim[1])  # distance across array (um)
     outputSize = int(distArr / exp.pxSize * (exp.tileScale * 1.25))
@@ -132,13 +132,13 @@ def tile_stitch(exp, posDict, dirs, ch):
         # Read each array section image.
         with tiff.TiffFile(image) as tif:
             img = tif.asarray()
-            img = rescale(img, exp.tileScale)
+        img = rescale(img, exp.tileScale)
 
-            background = gaussian(img, sigma=sig, preserve_range=True)
-            epsilon = 1e-10  # avoid dividing by 0
-            img_ff = img / (background + epsilon)
-            img_ff = rescale_intensity(img_ff,
-                                       in_range=(np.quantile(img_ff, q=0.05), np.quantile(img_ff, q=0.95)))
+        background = gaussian(img, sigma=sig, preserve_range=True)
+        epsilon = 1e-10  # avoid dividing by 0
+        img_ff = img / (background + epsilon)
+        img_ff = rescale_intensity(img_ff,
+                                   in_range=(np.quantile(img_ff, q=0.05), np.quantile(img_ff, q=0.95)))
 
         # Determine coordinates of array section.
         (x, y) = (posDict[idx + 1]['x'] * exp.tileScale, posDict[idx + 1]['y'] * exp.tileScale)

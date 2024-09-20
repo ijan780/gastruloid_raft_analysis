@@ -72,7 +72,7 @@ def cropRafts(exp):
             if (0 in raft_loc_idx) or (False in raft_coord_exist):
                 continue
             raftCount += 1
-            print(f'\t Array {arr + 1} Raft {raft + 1}')
+            # print(f'\t Array {arr + 1} Raft {raft + 1}')
 
             # Crop raft at final time point for all endpoint channels then stack into single TIFF as (c, y, x).
             crop_end = []
@@ -113,8 +113,7 @@ def cropRafts(exp):
             tiff.imwrite(outDir_tl_raft, tl_img,
                          imagej=True, metadata={'axes': 'TCYX', 'channels': ch_tl})
 
-        print(f'(array {arr + 1}) Cropped '
-              f'{raftCount} rafts ')
+        print(f'\t(Array {arr + 1}) Cropped {raftCount} rafts')
 
     print('Crop complete.')
 

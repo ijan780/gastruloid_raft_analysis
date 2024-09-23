@@ -47,9 +47,10 @@ class ExpMeta(object):
                              'r': 'Red',
                              'FarRed': 'FarRed',
                              'fr': 'FarRed'}
-        self.channels = self.find_channels(firstFolder)
         self.channel_mask = self.channels_abb[channel_mask]
-        self.set_tl_end(channels_tl, endDirSame)
+        channels_main = self.find_channels(firstFolder) # channels in dataDir
+        self.set_channels(channels_main, channels_tl, endDirSame)
+        print(f'Channels ({len(self.channels)} total): {self.channels}')
 
         # Variables that modify behavior of image analysis
         self.tileScale = 0.1
@@ -99,24 +100,24 @@ class ExpMeta(object):
             patternResult = parse(self.pattern, filename)
             if patternResult['channel'] not in channels:
                 channels.append(patternResult['channel'])
-        print(f'Channels ({len(channels)} total): {channels}')
         return channels
 
-    def set_tl_end(self, channels_tl, endDirSame):
+    def set_channels(self, channels_main, channels_tl, endDirSame):
         if (self.numTimePoints == 1) or channels_tl[0] == 'none':
             self.channels_tl = []
-            self.channels_end = self.channels
+            self.channels_end = channels_main
         elif channels_tl[0] == 'all':
-            self.channels_tl = self.channels
+            self.channels_tl = channels_main
             self.channels_end = []
         else:
             self.channels_tl = [self.channels_abb[ch] for ch in channels_tl]
             if endDirSame:
-                self.channels_end = [ch for ch in self.channels if ch not in self.channels_tl]
+                self.channels_end = [ch for ch in channels_main if ch not in self.channels_tl]
             else:
                 firstFolder_end = self.find_firstFolder(self.endDir)
                 channels_end = self.find_channels(firstFolder_end)
-                self.channels_end = channels_end[1:]
+                self.channels_end = channels_end[1:] # exclude BF if endpoint images in separate directory
+        self.channels = self.channels_tl + self.channels_end
 
     def write_metadata(self):
         totalDuration = (self.interval * (self.numTimePoints - 1))

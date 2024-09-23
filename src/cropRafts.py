@@ -9,14 +9,13 @@ import tifffile as tiff
 
 def cropRafts(exp):
     # Initialize numRafts, channels, and mask time point.
+    endDirSame = (exp.dataDir == exp.endDir)
+
     numRafts = exp.arrDim[2] ** 2
-    if exp.dataDir == exp.dataDir:
-        ch_end = exp.channels_end
-    else:
-        ch_end = [exp.channel_mask]
+
+    ch_end = exp.channels_end
     ch_tl = exp.channels_tl
 
-    endDirSame = (exp.dataDir == exp.endDir)
     if endDirSame:
         endTP = exp.numTimePoints - 1
     else:
@@ -47,39 +46,31 @@ def cropRafts(exp):
         raftCount = 0
         for raft in range(0, numRafts):
             # Check if raft exists at every time point (including separate mask imaging) and if loc_idx is within num of rafts in centroid_cell.
+            raft_centroid_cell_count = []
+            for tp in range(exp.numTimePoints):
+                img_row, img_col, _ = getLocIdx(loc_cell2, arr, tp, raft)
+                raft_centroid_cell_count.append(centroid_cell[arr, tp][img_row, img_col].shape[0])
+
             if endDirSame:
                 raft_loc_cell2 = [tp[raft] for tp in loc_cell2[arr, :]]
             else:
+                img_row_end, img_col_end, _ = getLocIdx(loc_cell2_end, arr, endTP, raft)
+                raft_centroid_cell_count.append(centroid_cell_end[arr, endTP][img_row_end, img_col_end].shape[0])
+
                 raft_loc_cell2 = [tp[raft] for tp in loc_cell2[arr, :]] + [tp[raft] for tp in loc_cell2_end[arr, :]]
 
-            raft_centroid_cell_count = []
-            for tp in range(exp.numTimePoints):
-                # Identify imaging row/col and local index.
-                img_row = loc_cell2[arr, tp][raft, 1] - 1
-                img_col = loc_cell2[arr, tp][raft, 2] - 1
-                raft_centroid_cell_count.append(centroid_cell[arr, tp][img_row, img_col].shape[0])
-            if not endDirSame:
-                # Identify imaging row/col and local index of endpoint images.
-                img_row_end = loc_cell2_end[arr, endTP][raft, 1] - 1
-                img_col_end = loc_cell2_end[arr, endTP][raft, 2] - 1
-                raft_centroid_cell_count.append(centroid_cell_end[arr, endTP][img_row_end, img_col_end].shape[0])
-            raft_loc_idx = [tp[3] for tp in raft_loc_cell2] # list of local indices for time-series
-            # print(f'\t{raft_loc_idx}')
-            # print(f'\t{raft_centroid_cell_count}')
+            raft_loc_idx = [tp[3] for tp in raft_loc_cell2] # list of local indices for tl
             raft_coord_exist = [a <= b for a, b in zip(raft_loc_idx, raft_centroid_cell_count)] # a <= b because MATLAB starts at 1
-            # print(f'\t{False in raft_coord_exist}')
 
             if (0 in raft_loc_idx) or (False in raft_coord_exist):
                 continue
-            raftCount += 1
+            raftCount += 1 # count only rafts that exist
             # print(f'\t Array {arr + 1} Raft {raft + 1}')
 
             # Crop raft at final time point for all endpoint channels then stack into single TIFF as (c, y, x).
             crop_end = []
-            # Identify imaging row/col and local index.
-            img_row_end = loc_cell2_end[arr, endTP][raft, 1] - 1
-            img_col_end = loc_cell2_end[arr, endTP][raft, 2] - 1
-            loc_idx_end = loc_cell2_end[arr, endTP][raft, 3] - 1
+            img_row_end, img_col_end, loc_idx_end = getLocIdx(loc_cell2_end, arr, endTP, raft)
+
             for ch in ch_end:
                 raftCrop = crop(exp, exp.endDir,
                                 img_row_end, img_col_end, loc_idx_end,
@@ -94,11 +85,7 @@ def cropRafts(exp):
             # Crop raft at each time point for all time-lapse channels then stack into single TIFF as (tp, c, y, x).
             crop_tp = []
             for tp in range(exp.numTimePoints):
-                # Identify imaging row/col and local index.
-                img_row = loc_cell2[arr, tp][raft, 1] - 1
-                img_col = loc_cell2[arr, tp][raft, 2] - 1
-                loc_idx = loc_cell2[arr, tp][raft, 3] - 1
-
+                img_row, img_col, loc_idx = getLocIdx(loc_cell2, arr, tp, raft)
                 crop_ch = []
                 for ch in ch_tl:
                     raftCrop = crop(exp, exp.dataDir,
@@ -117,6 +104,12 @@ def cropRafts(exp):
 
     print('Crop complete.')
 
+# Get img_row, img_col, and loc_idx from loc_cell2.
+def getLocIdx(loc_cell2, arr, tp, raft):
+    img_row = loc_cell2[arr, tp][raft, 1] - 1
+    img_col = loc_cell2[arr, tp][raft, 2] - 1
+    loc_idx = loc_cell2[arr, tp][raft, 3] - 1
+    return img_row, img_col, loc_idx
 
 # Loop through loc_cell for each raft and locate corresponding array subsection folder.
 def crop(exp, dir, img_row, img_col, loc_idx, centroid_cell, arr, tp, ch):

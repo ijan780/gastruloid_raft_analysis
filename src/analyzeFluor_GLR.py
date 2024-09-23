@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from expMeta import ExpMeta
+import ast
 import tifffile as tiff
 import itertools
 
@@ -163,12 +164,12 @@ def analyzeFluor(exp):
                                             break
                                         intMeans_fromCenter_raft[idx][count][tp] = (intMean_ring /
                                                                                intMeans_raft[idx + len(channels_end)][0])
+                                # TODO: calculate radial slope
             else:
                 print(f'\tDNE: Raft {raft}')
                 flags_missing += [1] * numTP
                 flags_empty += [None] * numTP
                 flags_border += [None] * numTP
-
 
             # Append raft-specific lists to array-wide lists.
             for idx, _ in enumerate(fluor_channels):
@@ -204,7 +205,7 @@ def analyzeFluor(exp):
             print(f'\t\tintMeans_fromCenter: {len(intMeans_fromCenter[0][0])}')
 
         # Create data frame for Array 'arr'.
-        df_rafts = saveFluorAnal(exp, times, raftNums, fluor_channels, arr,
+        df_rafts = saveFluorAnal(exp, fluor_channels, arr, times, raftNums,
                                  flags_missing, flags_empty, flags_border,
                                  numObjs, threshVals, fAreas, dens, eccens, radii, intMeans,
                                  intMeans_fold, intMeans_perpx, intMeans_perpx_fold,
@@ -318,30 +319,39 @@ def fromCenter(image, hull, hull_centroid, r, ringWidth):
     return intMean_ring
 
 # Creates and saves dataframe of raft data.
-def saveFluorAnal(exp, times, raftNums, fluor_channels, arr,
+def saveFluorAnal(exp, fluor_channels, arr, times, raftNums,
                   flags_missing, flags_empty, flags_border,
                   numObjs, threshVals, fAreas, dens, eccens, radii, intMeans,
                   intMeans_fold, intMeans_perpx, intMeans_perpx_fold,
                   numRings, ringWidth, intMeans_fromCenter):
+
+    rep_and_stain = exp.reporters_and_stains
+
     df_rafts = pd.DataFrame({"Time": times,
                              "Raft": raftNums,
                              "Missing": flags_missing,
                              "Empty": flags_empty,
                              "Border": flags_border})
-    for ch in range(len(fluor_channels)):
-        df_rafts[f'NumObj_{fluor_channels[ch]}'] = numObjs[ch]
-        df_rafts[f'ThreshVal_{fluor_channels[ch]}'] = threshVals[ch]
-        df_rafts[f'FArea_{fluor_channels[ch]}'] = fAreas[ch]
-        df_rafts[f'Den_{fluor_channels[ch]}'] = dens[ch]
-        df_rafts[f'Eccen_{fluor_channels[ch]}'] = eccens[ch]
-        df_rafts[f'Radius_{fluor_channels[ch]}'] = radii[ch]
-        df_rafts[f'IntMean_{fluor_channels[ch]}'] = intMeans[ch]
-    df_rafts['IntMean_Fold_{}}'] = intMeans_fold
-    df_rafts['IntMean_PerPx_Green'] = intMeans_perpx
-    df_rafts['IntMean_PerPx_Fold_Green'] = intMeans_perpx_fold
-    for r in range(numRings):
-        disFromCen = (ringWidth / 2) + (r * (ringWidth))  # px
-        df_rafts[f'IntMean_fromCenter_{disFromCen}_Green'] = intMeans_fromCenter[r]
+    for idx, _ in enumerate(fluor_channels):
+        ch = fluor_channels[idx]
+        # TODO: figure out end or tl as prefix (import both channels_end and channels_tl)
+        pre = ...
+        rep_or_stain = f'{pre}_{rep_and_stain[ch]}'
+        df_rafts[f'NumObj_{...}'] = numObjs[idx]
+        df_rafts[f'ThreshVal_{rep_and_stain[ch]}'] = threshVals[idx]
+        df_rafts[f'FArea_{rep_and_stain[ch]}'] = fAreas[idx]
+        df_rafts[f'Den_{rep_and_stain[ch]}'] = dens[idx]
+        df_rafts[f'Eccen_{rep_and_stain[ch]}'] = eccens[idx]
+        df_rafts[f'Radius_{rep_and_stain[ch]}'] = radii[idx]
+        df_rafts[f'IntMean_{rep_and_stain[ch]}'] = intMeans[idx]
+    for idx, _ in enumerate(exp.channels_tl):
+        ch = exp.channels_tl[idx]
+        df_rafts[f'IntMean_Fold_{rep_and_stain[ch]}'] = intMeans_fold[idx]
+        df_rafts[f'IntMean_PerPx_{rep_and_stain[ch]}'] = intMeans_perpx[idx]
+        df_rafts[f'IntMean_PerPx_{rep_and_stain[ch]}'] = intMeans_perpx_fold[idx]
+        for r in range(numRings):
+            disFromCen = (ringWidth / 2) + (r * (ringWidth))  # px
+            df_rafts[f'IntMean_fromCenter_{disFromCen}_{rep_and_stain[ch]}'] = intMeans_fromCenter[idx][r]
 
     df_rafts = df_rafts.sort_values(by=['Raft', 'Time'], ignore_index=True)
 
@@ -405,5 +415,6 @@ if __name__ == '__main__':
                       timeInt=interval,
                       endDirSame=endDirSame,
                       timeOffset=timeOffset)
+    currExp.reporters_and_stains = ast.literal_eval(dict_meta['Reporters & Stains'])
 
     analyzeFluor(currExp)

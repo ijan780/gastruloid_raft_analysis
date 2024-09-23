@@ -1,9 +1,8 @@
 # raftImageAnalysis_main.py - Initializes key parameters for MVX raft image analysis.
 
 from pathlib import Path
-import os
 import pandas as pd
-from parse import parse
+import ast
 
 from expMeta import ExpMeta
 from stitchArray import stitchArray
@@ -23,7 +22,7 @@ while True:
 
         dataDir = dict_meta['Data Dir']
         channel_mask = dict_meta['Channel (mask)']
-        channels_tl = dict_meta['Channels (tl)'].strip('][').replace("'", "").split(', ')
+        channels_tl = ast.literal_eval(dict_meta['Channels (tl)'])
         interval = float(dict_meta['Time Interval (hrs)'])
         endDirSame = (dict_meta['Data Dir'] == dict_meta['End Dir'])
         timeOffset = float(dict_meta['Time Offset (hrs)'])
@@ -35,12 +34,13 @@ while True:
                           timeInt=interval,
                           endDirSame=endDirSame,
                           timeOffset=timeOffset)
+        currExp.reporters_and_stains = ast.literal_eval(dict_meta['Reporters & Stains'])
         print()
         break
 
     elif load_or_create.lower() == 'n':
         print('CREATING EXPERIMENT...')
-        # Request user input for data folder absolute path, mask path (same or different), mask channel, time intervals, and time-lapse channels.
+        # Request user input for data folder absolute path, mask path (same or different), mask channel, time intervals, and reporter channels.
         dataDir = input('Enter data folder absolute path: ')
         while True:
             endDirSame = input('Is the mask folder the same as the data folder? (y/n): ')
@@ -55,7 +55,7 @@ while True:
         channel_mask = input('Enter channel for mask (b, v, g, r, fr): ')
         interval = float(input('Enter duration of time interval (hr): '))
         timeOffset = float(input('Enter time offset (hr): '))
-        channels_tl = input('Enter time-series channels separated by spaces (all, none, bf, b, v, g, r, fr): ')
+        channels_tl = input('Enter reporter channels separated by spaces (all, none, b, v, g, r, fr): ')
         channels_tl = channels_tl.split()
 
         # Create experiment metadata object.
@@ -70,6 +70,8 @@ while True:
         print(f'Channels time-series ({len(currExp.channels_tl)} total): {currExp.channels_tl}')
         print(f'Channels endpoint ({len(currExp.channels_end)} total): {currExp.channels_end}')
         print()
+        currExp.set_endStains()
+        print()
 
         # Print out metadata.
         currExp.write_metadata()
@@ -83,10 +85,10 @@ while True:
 # stitchArray(currExp)
 # print()
 
-# Crops individual identified rafts.
-print('NOW CROPPING TO RAFTS...')
-cropRafts(currExp)
-print()
+# # Crops individual identified rafts.
+# print('NOW CROPPING TO RAFTS...')
+# cropRafts(currExp)
+# print()
 
 # # Performs fluorescence analysis.
 # print('NOW PERFORMING FLUORESCENCE ANALYSIS')

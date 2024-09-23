@@ -47,6 +47,10 @@ class ExpMeta(object):
                              'r': 'Red',
                              'FarRed': 'FarRed',
                              'fr': 'FarRed'}
+        self.reporters_and_stains = {'tl_BF': 'BF',
+                                     'tl_Violet': 'BRA',
+                                     'tl_Green': 'SOX2',
+                                     'tl_Red': 'SOX17'}
         self.channel_mask = self.channels_abb[channel_mask]
         channels_main = self.find_channels(firstFolder) # channels in dataDir
         self.set_channels(channels_main, channels_tl, endDirSame)
@@ -103,6 +107,7 @@ class ExpMeta(object):
         return channels
 
     def set_channels(self, channels_main, channels_tl, endDirSame):
+        # channels_tl refers to reporter channels + BF.
         if (self.numTimePoints == 1) or channels_tl[0] == 'none':
             self.channels_tl = []
             self.channels_end = channels_main
@@ -110,7 +115,7 @@ class ExpMeta(object):
             self.channels_tl = channels_main
             self.channels_end = []
         else:
-            self.channels_tl = [self.channels_abb[ch] for ch in channels_tl]
+            self.channels_tl = ['BF'] + [self.channels_abb[ch] for ch in channels_tl]
             if endDirSame:
                 self.channels_end = [ch for ch in channels_main if ch not in self.channels_tl]
             else:
@@ -118,6 +123,13 @@ class ExpMeta(object):
                 channels_end = self.find_channels(firstFolder_end)
                 self.channels_end = channels_end[1:] # exclude BF if endpoint images in separate directory
         self.channels = self.channels_tl + self.channels_end
+
+    def set_endStains(self):
+        self.reporters_and_stains[f'end_{self.channel_mask}'] = 'Hull'
+        for ch in [ch for ch in self.channels_end if ch != self.channel_mask]:
+            stain = input(f'Stain that the following endpoint channel [{ch}] refers to: ')
+            self.reporters_and_stains[f'end_{ch}'] = stain
+        print(self.reporters_and_stains)
 
     def write_metadata(self):
         totalDuration = (self.interval * (self.numTimePoints - 1))
@@ -131,6 +143,7 @@ class ExpMeta(object):
                       'Number of Arrays',
                       'Number of Channels',
                       'Channels (total)',
+                      'Reporters & Stains',
                       'Channel (mask)',
                       'Channels (tl)',
                       'Channels (end)',
@@ -147,13 +160,13 @@ class ExpMeta(object):
                 self.numArrs,
                 len(self.channels),
                 self.channels,
+                self.reporters_and_stains,
                 self.channel_mask,
                 self.channels_tl,
                 self.channels_end,
                 self.mag,
                 self.pxSize,
                 self.tileScale]
-
 
         metaDir = self.analDir / 'Experiment Metadata.csv'
         df_meta = pd.DataFrame({"Properties": properties,

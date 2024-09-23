@@ -16,8 +16,8 @@ while True:
     print()
     if load_or_create.lower() == 'y':
         print('LOADING EXPERIMENT...')
-        metaDir = input('Enter data folder absolute path: ')
-        metaDir = Path(f'{metaDir}_Analysis') / 'Experiment Metadata.csv'
+        dataDir = input('Enter data folder absolute path: ')
+        metaDir = Path(f'{dataDir}_Analysis') / 'Experiment Metadata.csv'
         df_meta = pd.read_csv(metaDir)
         dict_meta = df_meta.set_index('Properties')['Values'].to_dict()
 

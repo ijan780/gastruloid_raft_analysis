@@ -104,7 +104,7 @@ def img_pos(exp, arr, positions):
 
 
 # Stitch the images within imgDirs based on image locations.
-def tile_stitch(exp, posDict, dirs, ch):
+def tile_stitch(exp, posDict, dirs):
     # print(f'Stitching images for Array {arr + 1} at '
     #       f'Time Point {tp} in '
     #       f'{ch} channel...')

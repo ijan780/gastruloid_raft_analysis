@@ -115,7 +115,11 @@ class ExpMeta(object):
             self.channels_tl = channels_main
             self.channels_end = []
         else:
-            self.channels_tl = ['BF'] + [self.channels_abb[ch] for ch in channels_tl]
+            if 'BF' in channels_tl:
+                self.channels_tl = [self.channels_abb[ch] for ch in channels_tl]
+            else:
+                self.channels_tl = ['BF'] + [self.channels_abb[ch] for ch in channels_tl]
+
             if endDirSame:
                 self.channels_end = [ch for ch in channels_main if ch not in self.channels_tl]
             else:

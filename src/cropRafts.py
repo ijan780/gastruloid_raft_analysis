@@ -16,6 +16,8 @@ def cropRafts(exp):
     ch_end = exp.channels_end
     ch_tl = exp.channels_tl
 
+    rep_and_stain = exp.reporters_and_stains
+
     if endDirSame:
         endTP = exp.numTimePoints - 1
     else:
@@ -80,7 +82,8 @@ def cropRafts(exp):
             end_img = np.stack(crop_end, axis=0)
             outDir_end_raft = outDir_end / f'array{arr + 1}_raft{(raft + 1):03}_end.tif'
             tiff.imwrite(outDir_end_raft, end_img,
-                         imagej=True, metadata={'axes': 'CYX', 'channels': ch_end})
+                         imagej=True, metadata={'axes': 'CYX',
+                                                'channels': [rep_and_stain[f'end_{ch}'] for ch in ch_end]})
 
             # Crop raft at each time point for all time-lapse channels then stack into single TIFF as (tp, c, y, x).
             crop_tp = []
@@ -98,7 +101,8 @@ def cropRafts(exp):
             tl_img = np.stack(crop_tp, axis=0)
             outDir_tl_raft = outDir_tl / f'array{arr + 1}_raft{(raft + 1):03}_tl.tif'
             tiff.imwrite(outDir_tl_raft, tl_img,
-                         imagej=True, metadata={'axes': 'TCYX', 'channels': ch_tl})
+                         imagej=True, metadata={'axes': 'TCYX',
+                                                'channels': [rep_and_stain[f'tl_{ch}'] for ch in ch_tl]})
 
         print(f'\t(Array {arr + 1}) Cropped {raftCount} rafts')
 

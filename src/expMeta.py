@@ -121,11 +121,12 @@ class ExpMeta(object):
                 self.channels_tl = ['BF'] + [self.channels_abb[ch] for ch in channels_tl]
 
             if endDirSame:
-                self.channels_end = [ch for ch in channels_main if ch not in self.channels_tl]
+                channels_end = [ch for ch in channels_main if ch not in self.channels_tl]
             else:
                 firstFolder_end = self.find_firstFolder(self.endDir)
                 channels_end = self.find_channels(firstFolder_end)
-                self.channels_end = channels_end[1:] # exclude BF if endpoint images in separate directory
+                channels_end = channels_end[1:] # exclude BF if endpoint images in separate directory
+            self.channels_end = [self.channel_mask] + [ch for ch in channels_end if ch != self.channel_mask]
         self.channels = self.channels_tl + self.channels_end
 
     def set_endStains(self):

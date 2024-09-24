@@ -14,6 +14,7 @@ def cropRafts(exp):
     numRafts = exp.arrDim[2] ** 2
 
     ch_end = exp.channels_end
+
     ch_tl = exp.channels_tl
 
     rep_and_stain = exp.reporters_and_stains

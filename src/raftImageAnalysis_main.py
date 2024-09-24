@@ -57,6 +57,7 @@ while True:
         timeOffset = float(input('Enter time offset (hr): '))
         channels_tl = input('Enter reporter channels separated by spaces (all, none, b, v, g, r, fr): ')
         channels_tl = channels_tl.split()
+        print()
 
         # Create experiment metadata object.
         currExp = ExpMeta(dataDir=dataDir,
@@ -85,10 +86,10 @@ while True:
 # stitchArray(currExp)
 # print()
 
-# # Crops individual identified rafts.
-# print('NOW CROPPING TO RAFTS...')
-# cropRafts(currExp)
-# print()
+# Crops individual identified rafts.
+print('NOW CROPPING TO RAFTS...')
+cropRafts(currExp)
+print()
 
 # # Performs fluorescence analysis.
 # print('NOW PERFORMING FLUORESCENCE ANALYSIS')

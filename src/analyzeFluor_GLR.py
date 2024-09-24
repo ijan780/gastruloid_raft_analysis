@@ -9,8 +9,6 @@ import itertools
 import math
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from skimage import io
 from skimage.morphology import closing, opening, disk, remove_small_objects, convex_hull_image
 from skimage.filters import gaussian, threshold_otsu
 from skimage.measure import label, regionprops_table
@@ -64,6 +62,7 @@ def analyzeFluor(exp):
         intMeans_perpx = [[] for _ in ch_tl]
         intMeans_perpx_fold = [[] for _ in ch_tl]
         intMeans_fromCenter = [[[] for _ in range(numRings)] for _ in ch_tl]
+        intMeans_radialSlope = [[] for _ in ch_tl]
 
         for raft in range(1, (numRafts + 1)):
             # Dedicated lists for each raft to later append to array-wide lists above.
@@ -78,6 +77,7 @@ def analyzeFluor(exp):
             intMeans_perpx_raft = [[None] * numTP for _ in ch_tl]
             intMeans_perpx_fold_raft = [[None] * numTP for _ in ch_tl]
             intMeans_fromCenter_raft = [[[None] * numTP for _ in range(numRings)] for _ in ch_tl]
+            intMeans_radialSlope_raft = [[None] * numTP for _ in ch_tl]
 
             # Directory of endpoint image.
             dir_end = exp.analDir / 'Individual Raft Images' / 'Endpoint'
@@ -114,13 +114,13 @@ def analyzeFluor(exp):
                     flags_border += [flag_border] * numTP
 
                     # Save features for ROI hull.
-                    numObjs_raft[0][exp.numTimePoints - 1] = numObj
-                    fAreas_raft[0][exp.numTimePoints - 1] = fArea_hull # fArea refers to hull (not thresh) area
-                    threshVals_raft[0][exp.numTimePoints - 1] = threshVal
-                    dens_raft[0][exp.numTimePoints - 1] = den
-                    eccens_raft[0][exp.numTimePoints - 1] = eccen
-                    radii_raft[0][exp.numTimePoints - 1] = radius
-                    intMeans_raft[0][exp.numTimePoints - 1] = intMean
+                    numObjs_raft[mask_idx][exp.numTimePoints - 1] = numObj
+                    fAreas_raft[mask_idx][exp.numTimePoints - 1] = fArea_hull # fArea refers to hull (not thresh) area
+                    threshVals_raft[mask_idx][exp.numTimePoints - 1] = threshVal
+                    dens_raft[mask_idx][exp.numTimePoints - 1] = den
+                    eccens_raft[mask_idx][exp.numTimePoints - 1] = eccen
+                    radii_raft[mask_idx][exp.numTimePoints - 1] = radius
+                    intMeans_raft[mask_idx][exp.numTimePoints - 1] = intMean
 
                     # TODO: create binary mask for & process other endpoint channels here.
 
@@ -141,8 +141,8 @@ def analyzeFluor(exp):
 
                             # Measure thresholded image.
                             fArea, numObj, den, eccen, radius, intMean, intMean_perpx, _ = measure_gen_feat(image,
-                                                                                                               hull,
-                                                                                                               fArea_hull)
+                                                                                                            hull,
+                                                                                                            fArea_hull)
                             numObjs_raft[idx + len(ch_end)][tp] = numObj
 
                             if numObj != 0:
@@ -163,9 +163,14 @@ def analyzeFluor(exp):
                                         intMean_ring = fromCenter(image, hull, hull_centroid, r, ringWidth)
                                         if math.isnan(intMean_ring):
                                             break
-                                        intMeans_fromCenter_raft[idx][count][tp] = (intMean_ring /
-                                                                               intMeans_raft[idx + len(ch_end)][0])
-                                # TODO: calculate radial slope
+                                        intMean_fromCenter = intMean_ring / intMeans_raft[idx + len(ch_end)][0]
+                                        ringNum = count
+                                        intMeans_fromCenter_raft[idx][count][tp] =  intMean_fromCenter
+
+                                    intMean_radialDiff = intMean_fromCenter - intMeans_fromCenter_raft[idx][0][tp]
+                                    intMeans_radialSlope_raft[idx][tp] = (intMean_radialDiff /
+                                                                          (ringNum * ringWidth * pxSize))
+
             else:
                 print(f'\tDNE: Raft {raft}')
                 flags_missing += [1] * numTP
@@ -187,6 +192,7 @@ def analyzeFluor(exp):
                 intMeans_perpx_fold[idx] += intMeans_perpx_fold_raft[idx]
                 for r in range(numRings):
                     intMeans_fromCenter[idx][r] += intMeans_fromCenter_raft[idx][r]
+                intMeans_radialSlope += intMeans_radialSlope_raft[idx]
 
             # print(f'\t\ttimes: {len(times)}')
             # print(f'\t\traftNums: {len(raftNums)}')
@@ -210,7 +216,7 @@ def analyzeFluor(exp):
                                  flags_missing, flags_empty, flags_border,
                                  numObjs, threshVals, fAreas, dens, eccens, radii, intMeans,
                                  intMeans_fold, intMeans_perpx, intMeans_perpx_fold,
-                                 numRings, ringWidth, intMeans_fromCenter)
+                                 numRings, ringWidth, intMeans_fromCenter, intMeans_radialSlope)
 
         # Grade good/bad rafts.
         raft_grad(exp, arr, df_rafts)
@@ -324,7 +330,7 @@ def saveFluorAnal(exp, ch_end, ch_tl, arr, times, raftNums,
                   flags_missing, flags_empty, flags_border,
                   numObjs, threshVals, fAreas, dens, eccens, radii, intMeans,
                   intMeans_fold, intMeans_perpx, intMeans_perpx_fold,
-                  numRings, ringWidth, intMeans_fromCenter):
+                  numRings, ringWidth, intMeans_fromCenter, intMeans_radialSlope):
 
     rep_and_stain = exp.reporters_and_stains
 
@@ -334,8 +340,7 @@ def saveFluorAnal(exp, ch_end, ch_tl, arr, times, raftNums,
                              "Empty": flags_empty,
                              "Border": flags_border})
 
-    for idx, _ in enumerate(ch_end):
-        ch = ch_end[idx]
+    for idx, ch in enumerate(ch_end):
         rep_or_stain = rep_and_stain[f'end_{ch}']
 
         df_rafts[f'NumObj_{rep_or_stain}'] = numObjs[idx]
@@ -346,8 +351,7 @@ def saveFluorAnal(exp, ch_end, ch_tl, arr, times, raftNums,
         df_rafts[f'Radius_{rep_or_stain}'] = radii[idx]
         df_rafts[f'IntMean_{rep_or_stain}'] = intMeans[idx]
 
-    for idx, _ in enumerate(ch_tl):
-        ch = ch_tl[idx]
+    for idx, ch in enumerate(ch_tl):
         rep_or_stain = rep_and_stain[f'tl_{ch}']
 
         df_rafts[f'NumObj_{rep_or_stain}'] = numObjs[idx + len(ch_end)]
@@ -364,6 +368,7 @@ def saveFluorAnal(exp, ch_end, ch_tl, arr, times, raftNums,
         for r in range(numRings):
             disFromCen = (ringWidth / 2) + (r * (ringWidth))  # px
             df_rafts[f'IntMean_fromCenter_{disFromCen}_{rep_or_stain}'] = intMeans_fromCenter[idx][r]
+        df_rafts[f'IntMean_RadialSlope_{rep_or_stain}'] = intMeans_radialSlope[idx]
 
     df_rafts = df_rafts.sort_values(by=['Raft', 'Time'], ignore_index=True)
 

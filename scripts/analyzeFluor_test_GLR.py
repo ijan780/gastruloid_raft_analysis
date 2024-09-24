@@ -7,18 +7,15 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from skimage import io
-from skimage.exposure import rescale_intensity, equalize_adapthist
-from skimage.morphology import closing, opening, disk, remove_small_holes, remove_small_objects, convex_hull_image
-from skimage.filters import gaussian, threshold_otsu
-from skimage.measure import label, regionprops, regionprops_table
-from skimage.draw import ellipse
+from skimage.exposure import rescale_intensity
 
+from src.analyzeFluor_GLR import segment_hull, segment_germ, measure_genFeat, ROI_borderCheck, fromCenter
 
-main_dir = Path(r'C:\Users\MVX\Documents\2 - Data\240729_R2GLR_1.8e6_0-48hrBMP4_0%aneu_3_Analysis\Individual Raft Images')
+main_dir = Path(r'C:\Users\MVX\Documents\2 - Data\240805_R2GLR_1.8e6_0-48hrBMP4_0%aneu_4_Analysis\Individual Raft Images')
+
 arr = '1'
-raft = '297'
+raft = '207'
 numTP = 9
-orderTP = list(range(numTP))
 
 numRafts = 23 * 23
 pxSize = 1.0257  # um/px (for 3.2X magnification)
@@ -43,16 +40,17 @@ intMeans_fold = [None] * numTP
 intMeans_perpx = [None] * numTP
 intMeans_perpx_fold = [None] * numTP
 intMeans_fromCenter = [[None] * int(numRings) for _ in range(numTP)]
+intMeans_radialSlope = [None] * numTP
 
 flag_fail_empty = 0
 flag_fail_border = 0
 
-for ch in range(len(channels)):
-    if channels[ch] == 'Hull':
+for idx, ch in enumerate(channels):
+    if channels[idx] == 'Hull':
         print(f'Now processing: Hull')
 
         # Import 16 bit image.
-        hullDir = main_dir / 'Endpoint' / f'arr{arr}_raft{raft}.tif'
+        hullDir = main_dir / 'Endpoint' / f'array{arr}_raft{raft}_end.tif'
         with tiff.TiffFile(hullDir) as tif:
             image = tif.pages[0].asarray()
         image_norm = rescale_intensity(image, in_range=(500, 35000))
@@ -60,19 +58,7 @@ for ch in range(len(channels)):
         # plt.show()
 
         # Create binary mask.
-        gaus = gaussian(image, sigma=2, preserve_range=True)
-        threshVal = threshold_otsu(gaus)
-        thresh = gaus > threshVal
-        # io.imshow(thresh)
-        # plt.show()
-        hull = opening(thresh, disk(5))
-        # io.imshow(hull)
-        # plt.show()
-        hull = remove_small_holes(hull, area_threshold=5e4)
-        hull = remove_small_objects(hull, min_size=7.5e4)
-        hull = convex_hull_image(hull)
-        # io.imshow(hull)
-        # plt.show()
+        hull, thresh, threshVal = segment_hull(image, flag_show=False)
         masks.append(hull)
 
         fArea_hull = np.sum(hull > 0)
@@ -80,138 +66,70 @@ for ch in range(len(channels)):
             flag_fail_empty = 1
             break
 
-        # Apply convex hull as mask to original thresholded image.
-        thresh = np.where(masks[0], thresh, 0).astype(int)
+        fArea, numObj, den, eccen, radius, intMean, intMean_perpx, hull_centroid = measure_genFeat(image,
+                                                                                                   hull,
+                                                                                                   fArea_hull,
+                                                                                                   hull=True,
+                                                                                                   flag_print=True)
 
-        # Measure hull image.
-        labels = label(hull)
-        regions = regionprops(labels, image)
-        props = regionprops_table(labels, properties=('centroid',
-                                                      'orientation',
-                                                      'axis_major_length',
-                                                      'axis_minor_length',
-                                                      'eccentricity',
-                                                      'bbox',
-                                                      'num_pixels'))
-        df_measure = pd.DataFrame(props)
-        print(df_measure)
+        flag_fail_border = ROI_borderCheck(thresh)
 
-        numObj = df_measure.shape[0]
-        den = 1
-        df_measure = df_measure.sort_values(by='num_pixels', ascending=False, ignore_index=True)
-        eccen = df_measure.loc[0]['eccentricity']
-        radius = ((df_measure.loc[0]['axis_major_length'] +
-                   df_measure.loc[0]['axis_minor_length']) / 2) / 2
-        intMean = np.mean(image[thresh > 0])
-        hull_centroid = (df_measure.loc[0]['centroid-0'], df_measure.loc[0]['centroid-1'])
-        # print(hull_centroid)
+        threshVals[idx][numTP - 1] = threshVal
+        numObjs[idx][numTP - 1] = numObj
+        fAreas[idx][numTP - 1] = fArea_hull
+        dens[idx][numTP - 1] = den
+        eccens[idx][numTP - 1] = eccen
+        radii[idx][numTP - 1] = radius
+        intMeans[idx][numTP - 1] = intMean
 
-        # Check if bounding box of thresh touches edge of raft.
-        bbox_hull = [0, 0, 0, 0]
-        rows = np.any(thresh, axis=0)
-        cols = np.any(thresh, axis=1)
-        bbox_hull[0], bbox_hull[2] = np.where(rows)[0][[0, -1]]
-        bbox_hull[1], bbox_hull[3] = np.where(cols)[0][[0, -1]]
-
-        if (bbox_hull[0] < (thresh.shape[0] * 0.01) or bbox_hull[1] < (thresh.shape[1] * 0.01)) or (
-                bbox_hull[2] > (thresh.shape[0] * 0.99) or bbox_hull[3] > (thresh.shape[1] * 0.99)):
-            print('\tTouching border!')
-            flag_fail_border = 1
-
-        threshVals[ch][numTP - 1] = threshVal
-        numObjs[ch][numTP - 1] = numObj
-        fAreas[ch][numTP - 1] = fArea_hull
-        dens[ch][numTP - 1] = den
-        eccens[ch][numTP - 1] = eccen
-        radii[ch][numTP - 1] = radius
-        intMeans[ch][numTP - 1] = intMean
-
-    elif (channels[ch] == 'Green') and (flag_fail_empty == 0):
+    elif (ch == 'Green') and (flag_fail_empty == 0):
         print(f'Now processing channel: Green')
 
-        for tp in orderTP:
+        for tp in range(numTP):
             # Import 16 bit image.
             slice_idx = tp * 2 + 1 # 2 channels, SOX2 idx = 1
-            sox2Dir = main_dir / 'Time-lapse' / f'array{arr}_raft{raft}.tif'
+            sox2Dir = main_dir / 'Time-lapse' / f'array{arr}_raft{raft}_tl.tif'
             with tiff.TiffFile(sox2Dir) as tif:
                 image = tif.pages[slice_idx].asarray()
 
             image_norm = rescale_intensity(image, in_range=(1500, 5000))
 
             # Create binary mask.
-            image = equalize_adapthist(image)
-            gaus = gaussian(image, sigma=4, preserve_range=True)
-            threshVal = threshold_otsu(gaus)
-
-            thresh = gaus > threshVal
-            # io.imshow(thresh1)
-            # plt.show()
-
-            # Apply convex hull as mask to thresholded image.
-            thresh = np.where(masks[0], thresh, 0).astype(int)
-            masks.append(thresh)
-            fArea = np.sum(thresh > 0)
-            # io.imshow(thresh)
-            # plt.show()
+            thresh, threshVal = segment_germ(image, hull, flag_show=False)
 
             # Measure thresholded image.
-            labels = label(thresh)
-            regions = regionprops(labels, image)
-            props = regionprops_table(labels, properties=('centroid',
-                                                          'orientation',
-                                                          'axis_major_length',
-                                                          'axis_minor_length',
-                                                          'eccentricity',
-                                                          'bbox',
-                                                          'num_pixels'))
-            df_measure = pd.DataFrame(props)
+            fArea, numObj, den, eccen, radius, intMean, intMean_perpx, _, regions = measure_genFeat(image,
+                                                                                                    hull,
+                                                                                                    fArea_hull,
+                                                                                                    flag_print=True,
+                                                                                                    flag_regions=True)
 
-            # Determine numObj, nucDen, eccen, radius, and intMean.
-            numObj = df_measure.shape[0]
-            numObjs[ch][tp] = numObj
+            numObjs[idx][tp] = numObj
+
             if numObj != 0:
-                df_measure = df_measure.sort_values(by='num_pixels', ascending=False, ignore_index=True)
-                nucDen = fArea / fArea_hull
-                eccen = df_measure.loc[0]['eccentricity']
-                radius = ((df_measure.loc[0]['axis_major_length'] +
-                          df_measure.loc[0]['axis_minor_length']) / 2) / 2
-                intMean = np.mean(image[thresh > 0])
-                intMean_perpx = intMean / fArea
-
-                threshVals[ch][tp] = threshVal
-                fAreas[ch][tp] = fArea
-                dens[ch][tp] = nucDen
-                eccens[ch][tp] = eccen
-                radii[ch][tp] = radius
-                intMeans[ch][tp] = intMean
-                intMeans_fold[tp] = intMean / intMeans[ch][0]
+                threshVals[idx][tp] = threshVal
+                fAreas[idx][tp] = fArea
+                dens[idx][tp] = den
+                eccens[idx][tp] = eccen
+                radii[idx][tp] = radius
+                intMeans[idx][tp] = intMean
+                intMeans_fold[tp] = intMean / intMeans[idx][0]
                 intMeans_perpx[tp] = intMean_perpx
                 intMeans_perpx_fold[tp] = intMean_perpx / intMeans_perpx[0]
 
                 # Determine intMean from center normalized to intMean via concentric rings at tp = 0.
-                if (flag_fail_border == 0) and (intMeans[ch][0] != None):
+                if (flag_fail_border == 0) and (intMeans[idx][0] != None):
                     for count, r in enumerate(range(ringWidth, (gasRad + 1), ringWidth)):
-                        buff = 60 # px
-                        half_buff = int(buff / 2) # px
+                        for count, r in enumerate(range(ringWidth, (gasRad + 1), ringWidth)):
+                            intMean_ring = fromCenter(image, hull, hull_centroid, r, ringWidth)
+                            if math.isnan(intMean_ring):
+                                break
+                            intMean_fromCenter = intMean_ring / intMeans[idx][0]
+                            ringNum = count
+                            intMeans_fromCenter[tp][count] = intMean_fromCenter
 
-                        image_expand = np.zeros((image.shape[0]+buff, image.shape[1]+buff))
-                        image_expand[half_buff:half_buff + image.shape[0], half_buff:half_buff + image.shape[1]] = image
-                        hull_expand = np.zeros((image.shape[0]+buff, image.shape[1]+buff))
-                        hull_expand[half_buff:half_buff+image.shape[0], half_buff:half_buff+image.shape[1]] = masks[0]
-
-                        ring = np.zeros((image.shape[0] + buff, image.shape[1] + buff))
-                        rr, cc = ellipse(hull_centroid[0]+half_buff, hull_centroid[1]+half_buff, r, r)
-                        ring[rr, cc] = 1
-                        rr_s, cc_s = ellipse(hull_centroid[0]+half_buff, hull_centroid[1]+half_buff,
-                                             (r - ringWidth),
-                                             (r - ringWidth))
-                        ring[rr_s, cc_s] = 0
-
-                        # Only measure pixels in ROI hull.
-                        intMean_ring = np.mean(image_expand[(ring > 0) & (hull_expand > 0)])
-                        if math.isnan(intMean_ring):
-                            break
-                        intMeans_fromCenter[tp][count] = intMean_ring / intMeans[ch][0]
+                        intMean_radialDiff = intMean_fromCenter - intMeans_fromCenter[tp][0]
+                        intMeans_radialSlope[tp] = intMean_radialDiff / (ringNum * ringWidth * pxSize)
 
                         # outDir = main_dir.parents[0] / 'From Center'
                         # outDir.mkdir(exist_ok=True)
@@ -257,6 +175,8 @@ for ch in range(len(channels)):
             for a in ax.ravel():
                 a.set_axis_off()
 
+            fig.suptitle(f'array{arr}_raft{raft}_timepoint{tp:02}_SOX2', fontweight='bold')
+
             fig.tight_layout()
 
             plt.show()
@@ -279,3 +199,4 @@ print(f'Intensity mean (fold change): {intMeans_fold}')
 print(f'Intensity mean per px (fold change): {intMeans_perpx_fold}')
 
 print(f'Intensity mean from center (norm to intMean0): {intMeans_fromCenter}')
+print(f'Intensity mean (radial slope): {intMeans_radialSlope}')

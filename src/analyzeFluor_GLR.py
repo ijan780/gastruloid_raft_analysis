@@ -2,19 +2,20 @@
 
 from pathlib import Path
 
-from expMeta import ExpMeta
-import ast
+from src.readMeta import ReadMeta
 import tifffile as tiff
 import itertools
 
 import math
 import pandas as pd
 import numpy as np
+from skimage import io
 from skimage.exposure import equalize_adapthist
 from skimage.morphology import closing, opening, disk, remove_small_holes, remove_small_objects, convex_hull_image
 from skimage.filters import gaussian, threshold_otsu
-from skimage.measure import label, regionprops_table
+from skimage.measure import label, regionprops_table, regionprops
 from skimage.draw import ellipse
+import matplotlib.pyplot as plt
 
 
 def analyzeFluor(exp):
@@ -107,12 +108,12 @@ def analyzeFluor(exp):
                     flags_empty += [0] * numTP
 
                     # Measure hull image.
-                    _, numObj, den, eccen, radius, intMean, _, hull_centroid = measure_gen_feat(image, hull,
+                    _, numObj, den, eccen, radius, intMean, _, hull_centroid = measure_genFeat(image, hull,
                                                                                                 fArea_hull,
                                                                                                 hull=True)
 
                     # Check if bounding box of ROI thresh touches edge of raft.
-                    flag_border = ROI_border_check(thresh)
+                    flag_border = ROI_borderCheck(thresh)
                     flags_border += [flag_border] * numTP
 
                     # Save features for ROI hull.
@@ -142,9 +143,9 @@ def analyzeFluor(exp):
                             thresh, threshVal = segment_germ(image, hull)
 
                             # Measure thresholded image.
-                            fArea, numObj, den, eccen, radius, intMean, intMean_perpx, _ = measure_gen_feat(image,
-                                                                                                            hull,
-                                                                                                            fArea_hull)
+                            fArea, numObj, den, eccen, radius, intMean, intMean_perpx, _ = measure_genFeat(image,
+                                                                                                           hull,
+                                                                                                           fArea_hull)
                             numObjs_raft[idx + len(ch_end)][tp] = numObj
 
                             if numObj != 0:
@@ -215,7 +216,7 @@ def analyzeFluor(exp):
             # print(f'\t\tintMeans_radialSlope: {len(intMeans_radialSlope[0])}')
 
         # Create data frame for Array 'arr'.
-        df_rafts = saveFluorAnal(exp, ch_end, ch_tl, arr, times, raftNums,
+        df_rafts = saveFluorAnal(exp, ch_end, ch_tl, arr, raftNums, times,
                                  flags_missing, flags_empty, flags_border,
                                  numObjs, threshVals, fAreas, dens, eccens, radii, intMeans,
                                  intMeans_fold, intMeans_perpx, intMeans_perpx_fold,
@@ -229,31 +230,56 @@ def analyzeFluor(exp):
     print('Fluorescence analysis complete.')
 
 
-def segment_hull(image):
+def segment_hull(image, flag_show=False):
     image = equalize_adapthist(image)
     gaus = gaussian(image, sigma=2, preserve_range=True)
     threshVal = threshold_otsu(gaus)
     thresh = gaus > threshVal
-    hull = opening(thresh, disk(5))
-    hull = remove_small_holes(hull, area_threshold=5e4)
-    hull = remove_small_objects(hull, min_size=7.5e4)
-    hull = convex_hull_image(hull)
+    opened = opening(thresh, disk(5))
+    filled = remove_small_holes(opened, area_threshold=5e4)
+    largest_region = keep_largest(filled)
+    # hull = remove_small_objects(hull, min_size=7.5e4)
+    hull = convex_hull_image(largest_region)
     thresh = np.where(hull, thresh, 0).astype(int)
+
+    if flag_show:
+        io.imshow(thresh)
+        plt.show()
+        io.imshow(largest_region)
+        plt.show()
+        io.imshow(hull)
+        plt.show()
 
     return hull, thresh, threshVal
 
 
-def segment_germ(image, hull):
+def keep_largest(mask):
+    labels = label(mask)
+    regions = regionprops(labels)
+    largest_region = max(regions, key=lambda r: r.area)
+    largest_region_mask = np.zeros_like(labels, dtype=bool)
+    largest_region_mask[labels == largest_region.label] = True
+
+    return largest_region_mask
+
+
+def segment_germ(image, hull, flag_show = False):
     image = equalize_adapthist(image)
     gaus = gaussian(image, sigma=4, preserve_range=True)
     threshVal = threshold_otsu(gaus)
     thresh = gaus > threshVal
-    thresh = np.where(hull, thresh, 0).astype(int)  # apply hull as mask to original thresholded image
+    thresh_masked = np.where(hull, thresh, 0).astype(int)  # apply hull as mask to original thresholded image
 
-    return thresh, threshVal
+    if flag_show:
+        io.imshow(thresh)
+        plt.show()
+        io.imshow(thresh_masked)
+        plt.show()
+
+    return thresh_masked, threshVal
 
 
-def measure_gen_feat(image, thresh, fArea_hull, hull=False):
+def measure_genFeat(image, thresh, fArea_hull, hull=False, flag_print=False, flag_regions=False):
     labels = label(thresh)
     props = regionprops_table(labels, properties=('centroid',
                                                   'orientation',
@@ -263,6 +289,8 @@ def measure_gen_feat(image, thresh, fArea_hull, hull=False):
                                                   'bbox',
                                                   'num_pixels'))
     df_measure = pd.DataFrame(props)
+    if flag_print:
+        print(df_measure)
 
     numObj = df_measure.shape[0]
     fArea = np.sum(thresh > 0)
@@ -286,10 +314,14 @@ def measure_gen_feat(image, thresh, fArea_hull, hull=False):
         hull_centroid = None
         den = fArea / fArea_hull
 
-    return fArea, numObj, den, eccen, radius, intMean, intMean_perpx, hull_centroid
+    if flag_regions:
+        regions = regionprops(labels)
+        return fArea, numObj, den, eccen, radius, intMean, intMean_perpx, hull_centroid, regions
+    else:
+        return fArea, numObj, den, eccen, radius, intMean, intMean_perpx, hull_centroid
 
 
-def ROI_border_check(thresh):
+def ROI_borderCheck(thresh):
     bbox = [0, 0, 0, 0]
     rows = np.any(thresh, axis=0)
     cols = np.any(thresh, axis=1)
@@ -331,6 +363,7 @@ def fromCenter(image, hull, hull_centroid, r, ringWidth):
 
     return intMean_ring
 
+
 # Creates and saves dataframe of raft data.
 def saveFluorAnal(exp, ch_end, ch_tl, arr, times, raftNums,
                   flags_missing, flags_empty, flags_border,
@@ -340,11 +373,11 @@ def saveFluorAnal(exp, ch_end, ch_tl, arr, times, raftNums,
 
     rep_and_stain = exp.reporters_and_stains
 
-    df_rafts = pd.DataFrame({"Time": times,
-                             "Raft": raftNums,
-                             "Missing": flags_missing,
-                             "Empty": flags_empty,
-                             "Border": flags_border})
+    df_rafts = pd.DataFrame({'Raft': raftNums,
+                             'Time': times,
+                             'Missing': flags_missing,
+                             'Empty': flags_empty,
+                             'Border': flags_border})
 
     for idx, ch in enumerate(ch_end):
         rep_or_stain = rep_and_stain[f'end_{ch}']
@@ -420,25 +453,6 @@ def raft_grad(exp, arr, df_rafts):
 # Run analysis without running raftImageAnalysis_main.py.
 if __name__ == '__main__':
     dataDir = r'C:\Users\MVX\Documents\2 - Data\240805_R2GLR_1.8e6_0-48hrBMP4_0%aneu_4'
-    metaDir = Path(f'{dataDir}_Analysis') / 'Experiment Metadata.csv'
-    df_meta = pd.read_csv(metaDir)
-    dict_meta = df_meta.set_index('Properties')['Values'].to_dict()
-
-    dataDir = dict_meta['Data Dir']
-    channel_mask = dict_meta['Channel (mask)']
-    ch_tl = ast.literal_eval(dict_meta['Channels (tl)'])
-    interval = float(dict_meta['Time Interval (hrs)'])
-    endDirSame = (dict_meta['Data Dir'] == dict_meta['End Dir'])
-    timeOffset = float(dict_meta['Time Offset (hrs)'])
-
-    # Create experiment metadata object.
-    currExp = ExpMeta(dataDir=dataDir,
-                      channel_mask=channel_mask,
-                      channels_tl=ch_tl,
-                      timeInt=interval,
-                      endDirSame=endDirSame,
-                      timeOffset=timeOffset)
-    currExp.reporters_and_stains = ast.literal_eval(dict_meta['Reporters & Stains'])
-    print()
+    currExp = ReadMeta(dataDir)
 
     analyzeFluor(currExp)

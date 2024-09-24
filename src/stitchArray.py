@@ -1,7 +1,6 @@
 # stitchArray.py - Creates stitched composite image of
 # entire array at each time point and for each channel.
 
-from pathlib import Path
 import os
 from scipy.io import loadmat
 import natsort

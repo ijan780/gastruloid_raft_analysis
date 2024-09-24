@@ -1,10 +1,8 @@
 # analyzeFluor_GLR.py - Analyzes each gastruloid-on-raft (requires time-lapse imaging.
 
-from pathlib import Path
-
 from src.readMeta import ReadMeta
 import tifffile as tiff
-import itertools
+from itertools import zip_longest
 
 import math
 import pandas as pd
@@ -437,7 +435,7 @@ def raft_grad(exp, arr, df_rafts):
     for grade in grades:
         grade.sort()
     # print(grades)
-    grades = list(zip(*itertools.zip_longest(*grades, fillvalue=None)))
+    grades = list(zip(*zip_longest(*grades, fillvalue=None)))
 
     df_grad = pd.DataFrame({"Pass": grades[0],
                             "Exclude": grades[1],

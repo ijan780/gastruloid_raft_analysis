@@ -1,10 +1,9 @@
 # analyzeFluor_GLR.py - Analyzes each gastruloid-on-raft (requires time-lapse imaging.
 
 from src.readMeta import ReadMeta
-import tifffile as tiff
-from itertools import zip_longest
 
 import math
+import tifffile as tiff
 import pandas as pd
 import numpy as np
 from skimage import io
@@ -14,6 +13,7 @@ from skimage.filters import gaussian, threshold_otsu
 from skimage.measure import label, regionprops_table, regionprops
 from skimage.draw import ellipse
 import matplotlib.pyplot as plt
+from itertools import zip_longest
 
 
 def analyzeFluor(exp):
@@ -40,6 +40,7 @@ def analyzeFluor(exp):
 
     # Analyze each fluorescence image for each array.
     for arr in range(exp.numArrs):
+        print(f'Processing Array {arr + 1}')
         raftNums = [raft for raft in range(1, (numRafts + 1)) for _ in range(numTP)]
         times = [((tp * interval) + timeOffset) for _ in range(1, (numRafts + 1)) for tp in range(numTP)]
 
@@ -224,6 +225,7 @@ def analyzeFluor(exp):
         raft_grad(exp, arr, df_rafts)
 
         print(f'Saved fluor data frame for Array {arr + 1}.')
+        print()
 
     print('Fluorescence analysis complete.')
 

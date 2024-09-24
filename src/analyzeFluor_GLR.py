@@ -194,7 +194,7 @@ def analyzeFluor(exp):
                 intMeans_perpx_fold[idx] += intMeans_perpx_fold_raft[idx]
                 for r in range(numRings):
                     intMeans_fromCenter[idx][r] += intMeans_fromCenter_raft[idx][r]
-                intMeans_radialSlope += intMeans_radialSlope_raft[idx]
+                intMeans_radialSlope[idx] += intMeans_radialSlope_raft[idx]
 
             # print(f'\t\ttimes: {len(times)}')
             # print(f'\t\traftNums: {len(raftNums)}')
@@ -212,6 +212,7 @@ def analyzeFluor(exp):
             # print(f'\t\tintMeans_perpx: {len(intMeans_perpx[0])}')
             # print(f'\t\tintMeans_perpx_fold: {len(intMeans_perpx_fold[0])}')
             # print(f'\t\tintMeans_fromCenter: {len(intMeans_fromCenter[0][0])}')
+            # print(f'\t\tintMeans_radialSlope: {len(intMeans_radialSlope[0])}')
 
         # Create data frame for Array 'arr'.
         df_rafts = saveFluorAnal(exp, ch_end, ch_tl, arr, times, raftNums,

@@ -32,7 +32,7 @@ img_path = r'C:\Users\MVX\Documents\2 - Data\240805_R2GLR_1.8e6_0-48hrBMP4_0%ane
 with tiff.TiffFile(img_path) as tif:
     img = tif.pages[0].asarray()
 
-img = equalize_adapthist(img)
+img = equalize_adapthist(img) 
 io.imshow(img)
 
 img = gaussian(img, sigma=2)

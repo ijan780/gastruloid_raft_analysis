@@ -1,6 +1,7 @@
 # analyzeFluor_GLR.py - Analyzes each gastruloid-on-raft (requires time-lapse imaging.
 
 from pathlib import Path
+
 from expMeta import ExpMeta
 import ast
 import tifffile as tiff
@@ -9,7 +10,8 @@ import itertools
 import math
 import pandas as pd
 import numpy as np
-from skimage.morphology import closing, opening, disk, remove_small_objects, convex_hull_image
+from skimage.exposure import equalize_adapthist
+from skimage.morphology import closing, opening, disk, remove_small_holes, remove_small_objects, convex_hull_image
 from skimage.filters import gaussian, threshold_otsu
 from skimage.measure import label, regionprops_table
 from skimage.draw import ellipse
@@ -96,7 +98,7 @@ def analyzeFluor(exp):
                 # Check for empty raft.
                 fArea_hull = np.sum(hull > 0)
 
-                if (threshVal < 5e3) or (fArea_hull == 0):
+                if (threshVal < 0.3) or (fArea_hull == 0):
                     print('\t\tEmpty raft!')
                     flags_empty += [1] * numTP
                     flags_border += [None] * numTP
@@ -227,11 +229,13 @@ def analyzeFluor(exp):
 
 
 def segment_hull(image):
+    image = equalize_adapthist(image)
     gaus = gaussian(image, sigma=2, preserve_range=True)
     threshVal = threshold_otsu(gaus)
     thresh = gaus > threshVal
     hull = opening(thresh, disk(5))
-    hull = remove_small_objects(hull, min_size=25000)
+    hull = remove_small_holes(hull, area_threshold=5e4)
+    hull = remove_small_objects(hull, min_size=7.5e4)
     hull = convex_hull_image(hull)
     thresh = np.where(hull, thresh, 0).astype(int)
 
@@ -239,6 +243,7 @@ def segment_hull(image):
 
 
 def segment_germ(image, hull):
+    image = equalize_adapthist(image)
     gaus = gaussian(image, sigma=4, preserve_range=True)
     threshVal = threshold_otsu(gaus)
     thresh = gaus > threshVal

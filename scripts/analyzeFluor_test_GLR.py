@@ -1,26 +1,24 @@
 # analyzeFluor_test_GLR.py - Optimized for testing analysis code with single images.
 
-import os
 from pathlib import Path
+import tifffile as tiff
 import math
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from skimage import io
-from skimage.exposure import rescale_intensity
-from skimage.morphology import closing, opening, disk, remove_small_objects, convex_hull_image
-from skimage.restoration import rolling_ball
+from skimage.exposure import rescale_intensity, equalize_adapthist
+from skimage.morphology import closing, opening, disk, remove_small_holes, remove_small_objects, convex_hull_image
 from skimage.filters import gaussian, threshold_otsu
 from skimage.measure import label, regionprops, regionprops_table
 from skimage.draw import ellipse
-from PIL import Image
+
 
 main_dir = Path(r'C:\Users\MVX\Documents\2 - Data\240729_R2GLR_1.8e6_0-48hrBMP4_0%aneu_3_Analysis\Individual Raft Images')
 arr = '1'
 raft = '297'
 numTP = 9
 orderTP = list(range(numTP))
-# print(orderTP)
 
 numRafts = 23 * 23
 pxSize = 1.0257  # um/px (for 3.2X magnification)
@@ -29,41 +27,34 @@ gasRad = math.ceil((500 / 2 / pxSize) / ringWidth) * ringWidth # px rounded to n
 numRings = int(gasRad / ringWidth)
 
 channels = ['Hull', 'Green']
-filenames = []
 masks = []
 
 fArea_hull = None
 hull_centroid = None
 
-threshVals = [[None] * numTP for i in range(len(channels))]
-numObjs = [[None] * numTP for i in range(len(channels))]
-fAreas = [[None] * numTP for i in range(len(channels))]
-dens = [[None] * numTP for i in range(len(channels))]
-eccens = [[None] * numTP for i in range(len(channels))]
-radii = [[None] * numTP for i in range(len(channels))]
-intMeans = [[None] * numTP for i in range(len(channels))]
+threshVals = [[None] * numTP for _ in range(len(channels))]
+numObjs = [[None] * numTP for _ in range(len(channels))]
+fAreas = [[None] * numTP for _ in range(len(channels))]
+dens = [[None] * numTP for _ in range(len(channels))]
+eccens = [[None] * numTP for _ in range(len(channels))]
+radii = [[None] * numTP for _ in range(len(channels))]
+intMeans = [[None] * numTP for _ in range(len(channels))]
 intMeans_fold = [None] * numTP
 intMeans_perpx = [None] * numTP
 intMeans_perpx_fold = [None] * numTP
-intMeans_fromCenter = [[None] * int(numRings) for i in range(numTP)]
-
+intMeans_fromCenter = [[None] * int(numRings) for _ in range(numTP)]
 
 flag_fail_empty = 0
 flag_fail_border = 0
-# flag_fail_lo_int = 0
 
 for ch in range(len(channels)):
     if channels[ch] == 'Hull':
         print(f'Now processing: Hull')
 
         # Import 16 bit image.
-        main_dir_hull = Path(r'C:\Users\MVX\Documents\2 - Data\240729_R2GLR_1.8e6_0-48hrBMP4_0%aneu_3_Calcein_Analysis\Individual Raft Images')
-        dir = main_dir_hull / f'array{arr}_timepoint00_Violet'
-        filename = f'array{arr}_timepoint00_Violet_raft{raft}.tif'
-        # dir = main_dir / f'array{arr}_timepoint{orderTP[0]}}_Green'
-        # filename = f'array{arr}_timepoint{orderTP[0]:02}_Green_raft{raft}.tif'
-        filenames.append(filename)
-        image = io.imread(str(dir / filename))
+        hullDir = main_dir / 'Endpoint' / f'arr{arr}_raft{raft}.tif'
+        with tiff.TiffFile(hullDir) as tif:
+            image = tif.pages[0].asarray()
         image_norm = rescale_intensity(image, in_range=(500, 35000))
         # io.imshow(image_norm)
         # plt.show()
@@ -77,14 +68,15 @@ for ch in range(len(channels)):
         hull = opening(thresh, disk(5))
         # io.imshow(hull)
         # plt.show()
-        hull = remove_small_objects(hull, min_size=25000)
+        hull = remove_small_holes(hull, area_threshold=5e4)
+        hull = remove_small_objects(hull, min_size=7.5e4)
         hull = convex_hull_image(hull)
         # io.imshow(hull)
         # plt.show()
         masks.append(hull)
 
         fArea_hull = np.sum(hull > 0)
-        if (threshVal < 1e4) or (fArea_hull == 0):
+        if (threshVal < 0.3) or (fArea_hull == 0):
             flag_fail_empty = 1
             break
 
@@ -105,7 +97,7 @@ for ch in range(len(channels)):
         print(df_measure)
 
         numObj = df_measure.shape[0]
-        nucDen = 1
+        den = 1
         df_measure = df_measure.sort_values(by='num_pixels', ascending=False, ignore_index=True)
         eccen = df_measure.loc[0]['eccentricity']
         radius = ((df_measure.loc[0]['axis_major_length'] +
@@ -129,7 +121,7 @@ for ch in range(len(channels)):
         threshVals[ch][numTP - 1] = threshVal
         numObjs[ch][numTP - 1] = numObj
         fAreas[ch][numTP - 1] = fArea_hull
-        dens[ch][numTP - 1] = nucDen
+        dens[ch][numTP - 1] = den
         eccens[ch][numTP - 1] = eccen
         radii[ch][numTP - 1] = radius
         intMeans[ch][numTP - 1] = intMean
@@ -139,31 +131,21 @@ for ch in range(len(channels)):
 
         for tp in orderTP:
             # Import 16 bit image.
-            dir = main_dir / f'array{arr}_timepoint{tp:02}_{channels[ch]}'
-            filename = f'array{arr}_timepoint{tp:02}_{channels[ch]}_raft{raft}.tif'
-            filenames.append(filenames)
-            image = io.imread(str(dir / filename))
+            slice_idx = tp * 2 + 1 # 2 channels, SOX2 idx = 1
+            sox2Dir = main_dir / 'Time-lapse' / f'array{arr}_raft{raft}.tif'
+            with tiff.TiffFile(sox2Dir) as tif:
+                image = tif.pages[slice_idx].asarray()
+
             image_norm = rescale_intensity(image, in_range=(1500, 5000))
-            image_crop = image[int(bbox_hull[1]):int(bbox_hull[3]), int(bbox_hull[0]):int(bbox_hull[2])]
 
             # Create binary mask.
+            image = equalize_adapthist(image)
             gaus = gaussian(image, sigma=4, preserve_range=True)
-            threshVal1 = threshold_otsu(gaus)
-            gaus_crop = gaussian(image_crop, sigma=4, preserve_range=True)
-            threshVal2 = threshold_otsu(gaus_crop)
-            threshVal3 = threshold_otsu(gaus[masks[0] > 0])
+            threshVal = threshold_otsu(gaus)
 
-            thresh1 = gaus > threshVal1
+            thresh = gaus > threshVal
             # io.imshow(thresh1)
             # plt.show()
-            # thresh2 = gaus > threshVal2
-            # io.imshow(thresh2)
-            # plt.show()
-            # thresh3 = gaus > threshVal3
-            # io.imshow(thresh3)
-            # plt.show()
-
-            thresh = thresh1
 
             # Apply convex hull as mask to thresholded image.
             thresh = np.where(masks[0], thresh, 0).astype(int)
@@ -208,8 +190,7 @@ for ch in range(len(channels)):
 
                 # Determine intMean from center normalized to intMean via concentric rings at tp = 0.
                 if (flag_fail_border == 0) and (intMeans[ch][0] != None):
-                    count = 0
-                    for r in range(ringWidth, (gasRad + 1), ringWidth):
+                    for count, r in enumerate(range(ringWidth, (gasRad + 1), ringWidth)):
                         buff = 60 # px
                         half_buff = int(buff / 2) # px
 
@@ -232,8 +213,8 @@ for ch in range(len(channels)):
                             break
                         intMeans_fromCenter[tp][count] = intMean_ring / intMeans[ch][0]
 
-                        outPath = Path(r'C:\Users\MVX\Documents\2 - Data\240722_R2GLR_1.8e6_0-48hrBMP4_0%aneu_2_Analysis\From Center')
-
+                        # outDir = main_dir.parents[0] / 'From Center'
+                        # outDir.mkdir(exist_ok=True)
                         # if tp == orderTP[-1]:
                         #     image *= masks[0]
                         #     plt.imshow(image, cmap='gray')
@@ -241,9 +222,7 @@ for ch in range(len(channels)):
                         #     plt.imshow(ring, cmap='jet', alpha=0.5*(ring > 0))
                         #     plt.axis('off')
                         #     file_name = f'Array{arr}_Raft{raft}_TP{tp:02}_FromCenter_{r - 5}.jpg'
-                        #     plt.savefig(str(outPath / file_name), bbox_inches='tight', pad_inches=0)
-
-                        count += 1
+                        #     plt.savefig(str(outDir / file_name), bbox_inches='tight', pad_inches=0)
 
             # Plot each step of image analysis process.
             fig, ax = plt.subplots(1, 3, figsize=(9, 3), sharey=True)
@@ -278,7 +257,6 @@ for ch in range(len(channels)):
             for a in ax.ravel():
                 a.set_axis_off()
 
-            fig.suptitle(filename, fontsize=14)
             fig.tight_layout()
 
             plt.show()
@@ -288,7 +266,6 @@ print()
 
 print(f'Flag_Empty: {flag_fail_empty}')
 print(f'Flag_Border: {flag_fail_border}')
-# print(f'Flag_Lo_Int: {flag_fail_lo_int}')
 
 print(f'Channels: {channels}')
 print(f'Thresh values: {threshVals}')

@@ -10,7 +10,7 @@ from matplotlib import gridspec
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import pandas as pd
-import tqdm
+from tqdm import tqdm
 
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE

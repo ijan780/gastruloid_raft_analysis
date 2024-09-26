@@ -3,7 +3,7 @@
 from src.readMeta import ReadMeta
 
 import math
-import tqdm
+from tqdm import tqdm
 import tifffile as tiff
 import pandas as pd
 import numpy as np

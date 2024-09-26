@@ -95,7 +95,7 @@ for idx, ch in enumerate(channels):
             image_norm = rescale_intensity(image, in_range=(1500, 5000))
 
             # Create binary mask.
-            thresh, threshVal = segment_germ(image, hull, flag_show=False)
+            thresh, threshVal = segment_germ(image, thresh, flag_show=False)
 
             # Measure thresholded image.
             fArea, numObj, den, eccen, radius, intMean, intMean_perpx, _, regions = measure_genFeat(image,

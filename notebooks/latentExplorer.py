@@ -10,7 +10,7 @@ from matplotlib import gridspec
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import pandas as pd
-
+import tqdm
 
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
@@ -80,7 +80,7 @@ umap_out = umap_transformer.fit_transform(df_lat_norm)
 umap_df = pd.DataFrame(umap_out, columns=["UMAP_1","UMAP_2"])
 
 #%%
-for ft in feats:
+for ft in tqdm(feats):
     ft_list_good = df_lat_good[ft].tolist()
     ft_list = [ft_list_good[idx] for idx in df_lat_drop.index.tolist()]
 

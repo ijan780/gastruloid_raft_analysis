@@ -3,6 +3,7 @@
 from src.readMeta import ReadMeta
 
 import math
+import tqdm
 import tifffile as tiff
 import pandas as pd
 import numpy as np
@@ -66,7 +67,7 @@ def analyzeFluor(exp):
         intMeans_fromCenter = [[[] for _ in range(numRings)] for _ in ch_tl]
         intMeans_radialSlope = [[] for _ in ch_tl]
 
-        for raft in range(1, (numRafts + 1)):
+        for raft in tqdm(range(1, (numRafts + 1))):
             # Dedicated lists for each raft to later append to array-wide lists above.
             numObjs_raft = [[None] * numTP for _ in fluor_channels]
             threshVals_raft = [[None] * numTP for _ in fluor_channels]
@@ -87,7 +88,7 @@ def analyzeFluor(exp):
 
             # Only process rafts that exist.
             if imageDir_end.is_file():
-                print(f'\tExists: Raft {raft}')
+                # print(f'\tExists: Raft {raft}')
                 flags_missing += [0] * numTP
 
                 # Create binary mask for ROI mask.
@@ -99,7 +100,7 @@ def analyzeFluor(exp):
                 fArea_hull = np.sum(hull > 0)
 
                 if (threshVal < 0.3) or (fArea_hull == 0):
-                    print('\t\tEmpty raft!')
+                    # print('\t\tEmpty raft!')
                     flags_empty += [1] * numTP
                     flags_border += [None] * numTP
 
@@ -174,7 +175,7 @@ def analyzeFluor(exp):
                                                                           (ringNum * ringWidth * pxSize))
 
             else:
-                print(f'\tDNE: Raft {raft}')
+                # print(f'\tDNE: Raft {raft}')
                 flags_missing += [1] * numTP
                 flags_empty += [None] * numTP
                 flags_border += [None] * numTP
@@ -330,7 +331,7 @@ def ROI_borderCheck(thresh):
 
     if (bbox[0] < (thresh.shape[0] * 0.01) or bbox[1] < (thresh.shape[1] * 0.01)) or (
             bbox[2] > (thresh.shape[0] * 0.99) or bbox[3] > (thresh.shape[1] * 0.99)):
-        print('\t\tTouching border!')
+        # print('\t\tTouching border!')
         flag_border = 1
     else:
         flag_border = 0

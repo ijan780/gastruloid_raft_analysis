@@ -126,7 +126,7 @@ for i, fts in enumerate(feats2):
         elif 'Radius' in ft:
             unit = r'(μm)'
         elif 'RadialSlope' in ft:
-            unit = r'($\mathregular{px^{-1}}$)'
+            unit = r'($\mathregular{μm^{-1}}$)'
         else:
             unit = ''
 

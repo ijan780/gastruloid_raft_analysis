@@ -108,8 +108,8 @@ def analyzeFluor(exp):
 
                     # Measure hull image.
                     _, numObj, den, eccen, radius, intMean, _, hull_centroid = measure_genFeat(image, hull,
-                                                                                                fArea_hull,
-                                                                                                hull=True)
+                                                                                               fArea_hull,
+                                                                                               hull=True)
 
                     # Check if bounding box of ROI thresh touches edge of raft.
                     flag_border = ROI_borderCheck(thresh)
@@ -143,7 +143,7 @@ def analyzeFluor(exp):
 
                             # Measure thresholded image.
                             fArea, numObj, den, eccen, radius, intMean, intMean_perpx, _ = measure_genFeat(image,
-                                                                                                           hull,
+                                                                                                           thresh,
                                                                                                            fArea_hull)
                             numObjs_raft[idx + len(ch_end)][tp] = numObj
 

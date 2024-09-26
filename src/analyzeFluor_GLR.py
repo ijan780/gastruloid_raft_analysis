@@ -365,7 +365,7 @@ def fromCenter(image, hull, hull_centroid, r, ringWidth):
 
 
 # Creates and saves dataframe of raft data.
-def saveFluorAnal(exp, ch_end, ch_tl, arr, times, raftNums,
+def saveFluorAnal(exp, ch_end, ch_tl, arr, raftNums, times,
                   flags_missing, flags_empty, flags_border,
                   numObjs, threshVals, fAreas, dens, eccens, radii, intMeans,
                   intMeans_fold, intMeans_perpx, intMeans_perpx_fold,
@@ -403,10 +403,10 @@ def saveFluorAnal(exp, ch_end, ch_tl, arr, times, raftNums,
 
         df_rafts[f'IntMean_Fold_{rep_or_stain}'] = intMeans_fold[idx]
         df_rafts[f'IntMean_PerPx_{rep_or_stain}'] = intMeans_perpx[idx]
-        df_rafts[f'IntMean_PerPx_{rep_or_stain}'] = intMeans_perpx_fold[idx]
+        df_rafts[f'IntMean_PerPx_Fold_{rep_or_stain}'] = intMeans_perpx_fold[idx]
         for r in range(numRings):
             disFromCen = (ringWidth / 2) + (r * (ringWidth))  # px
-            df_rafts[f'IntMean_fromCenter_{disFromCen}_{rep_or_stain}'] = intMeans_fromCenter[idx][r]
+            df_rafts[f'IntMean_fromCenter_{int(disFromCen)}_{rep_or_stain}'] = intMeans_fromCenter[idx][r]
         df_rafts[f'IntMean_RadialSlope_{rep_or_stain}'] = intMeans_radialSlope[idx]
 
     df_rafts = df_rafts.sort_values(by=['Raft', 'Time'], ignore_index=True)
@@ -446,8 +446,8 @@ def raft_grad(exp, arr, df_rafts):
                             "Excl_border": grades[4],
                             })
 
-    outPath_grad = exp.analDir / f'array{arr + 1}_RaftGrading_GLR.csv'
-    df_grad.to_csv(outPath_grad, header=True, index=False)
+    outDir_grad = exp.analDir / f'array{arr + 1}_RaftGrading_GLR.csv'
+    df_grad.to_csv(outDir_grad, header=True, index=False)
 
 
 # Run analysis without running raftImageAnalysis_main.py.

@@ -91,7 +91,7 @@ for ft in tqdm(feats):
 
 #%%
 rep = ['SOX2']
-feats2 = [['Time'],
+feats2 = [['Time', 'Array'],
           ['FArea', 'Den', 'Eccen', 'Radius'],
           ['IntMean', 'IntMean_Fold', 'IntMean_PerPx', 'IntMean_PerPx_Fold'],
           ['IntMean_RadialSlope']]
@@ -101,7 +101,7 @@ fig, axes = plt.subplots(4, 4, figsize=(18, 14))
 ch = rep[0]
 for i, fts in enumerate(feats2):
     for j, ft in enumerate(fts):
-        if ft == 'Time':
+        if ft == 'Time' or ft == 'Array':
             label = ft
         else:
             label = f'{ft}_{ch}'
@@ -133,6 +133,9 @@ for i, fts in enumerate(feats2):
         if ft == 'Time':
             axes[i, j].set_title((f'{ft} (h)'),
                                  fontweight='bold')
+        elif ft =='Array':
+            axes[i, j].set_title((ft),
+                                 fontweight='bold')
         else:
             axes[i, j].set_title((f'{ft} {ch} {unit}'),
                                  fontweight='bold')
@@ -140,6 +143,70 @@ for i, fts in enumerate(feats2):
 for ax in axes.flat:
     if not ax.has_data():
         ax.remove()
+
+plt.tight_layout()
+plt.show()
+
+# %%
+numTP = 9
+df_radSlop = pd.DataFrame()
+radSlops= [[] for _ in range(numTP)]
+arrays_rs = []
+rafts_rs = []
+
+for arr in set(umap_df['Array'].tolist()):
+    df_sub = umap_df[umap_df['Array'] == arr]
+    for raft in set(df_sub['Raft'].tolist()):
+        df_sub2 = df_sub[df_sub['Raft'] == raft]
+        radSlop = df_sub2['IntMean_RadialSlope_SOX2'].tolist()
+        if not np.any(np.isnan(radSlop)):
+            for i in range(numTP):
+                radSlops[i].append(radSlop[i])
+            arrays_rs.append(arr)
+            rafts_rs.append(raft)
+
+for i in range(numTP):
+    df_radSlop[f'TP_{i:02}'] = radSlops[i]
+
+#%%
+df_radSlop_norm = StandardScaler().fit_transform(df_radSlop)
+
+umap_transformer_rs = umap.UMAP(n_neighbors = 30)
+umap_out_rs = umap_transformer.fit_transform(df_radSlop_norm)
+
+umap_df_rs = pd.DataFrame(umap_out_rs, columns=["UMAP_1","UMAP_2"])
+
+#%%
+umap_df_rs['Array'] = arrays_rs
+umap_df_rs['Raft'] = rafts_rs
+
+#%%
+#%%
+rep = ['SOX2']
+feats3 = ['Array', 'Raft']
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+
+ch = rep[0]
+for i, ft in enumerate(feats3):
+    label = ft
+    sns.scatterplot(ax=axes[i],
+                    data=shuffle(umap_df_rs),
+                    x='UMAP_1',
+                    y='UMAP_2',
+                    hue=label,
+                    alpha=0.5,
+                    palette='viridis',
+                    legend=False
+                    )
+
+    norm = plt.Normalize(umap_df_rs[label].min(), umap_df_rs[label].max())
+    sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
+    sm.set_array([])
+    cbar = plt.colorbar(sm, ax=axes[i])
+
+    axes[i].set_title(ft, fontweight='bold')
+
 
 plt.tight_layout()
 plt.show()

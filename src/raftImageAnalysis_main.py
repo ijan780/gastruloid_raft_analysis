@@ -4,7 +4,7 @@ from expMeta import ExpMeta
 from readMeta import ReadMeta
 from stitchArray import stitchArray
 from cropRafts import cropRafts
-from analyzeFluor_CalcHoechst import analyzeFluor
+from analyzeFluor_GLR import analyzeFluor
 
 # Load or create new experiment metadata object.
 while True:
@@ -59,19 +59,19 @@ while True:
     else:
         continue
 
-# # Stitch images into composite.
-# print('NOW STITCHING...')
-# stitchArray(currExp)
-# print()
+# Stitch images into composite.
+print('NOW STITCHING...')
+stitchArray(currExp)
+print()
 
 # Crops individual identified rafts.
 print('NOW CROPPING TO RAFTS...')
 cropRafts(currExp)
 print()
 
-# # Performs fluorescence analysis.
-# print('NOW PERFORMING FLUORESCENCE ANALYSIS')
-# analyzeFluor(currExp, flag_finalTP=0)
-# print()
+# Performs fluorescence analysis.
+print('NOW PERFORMING FLUORESCENCE ANALYSIS')
+analyzeFluor(currExp)
+print()
 
 print('PROCESSING COMPLETE.')

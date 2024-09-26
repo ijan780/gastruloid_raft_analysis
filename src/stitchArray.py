@@ -3,7 +3,8 @@
 
 import os
 from scipy.io import loadmat
-import natsort
+from natsort import natsorted, ns
+from tqdm import tqdm
 
 import tifffile as tiff
 from skimage.transform import rescale
@@ -38,15 +39,15 @@ def stitchArray(exp):
     for arr in range(exp.numArrs):
         # Stitch mask channel first.
         print(f'\tCurrently processing Array {arr + 1}')
-        print(f'\t\tEndpoint - Channel {exp.channel_mask}')
+        status = f'\t\tEndpoint - Channel {exp.channel_mask}'
         posDict_mask = img_pos(exp, arr, positions_mask)
         maskDirs = []
         arrDir_mask = exp.endDir / f'{arr + 1}'
         for sub in os.listdir(arrDir_mask):
             maskDir = arrDir_mask / sub / f'{maskTP:02}_{exp.channel_mask}.tif'
             maskDirs.append(maskDir)
-        maskDirs = natsort.natsorted(maskDirs)
-        stitchedImg = tile_stitch(exp, posDict_mask, maskDirs, exp.channel_mask)
+        maskDirs = natsorted(maskDirs, alg=ns.PATH)
+        stitchedImg = tile_stitch(exp, posDict_mask, maskDirs, status)
         outDir = outDir_main / f'array{arr + 1}_timepoint{(exp.numTimePoints - 1):02}_{exp.channel_mask}.tif'
         tiff.imwrite(outDir, stitchedImg)
 
@@ -55,12 +56,12 @@ def stitchArray(exp):
         arrDir = exp.dataDir / f'{arr + 1}'
         for tp in orderTP:
             for ch in ch_stitch:
-                print(f'\t\tTime Point {tp:02} - Channel {ch}')
+                status = f'\t\tTime Point {tp:02} - Channel {ch}'
                 imgDirs = []
                 for sub in os.listdir(arrDir):
                     imgDir = arrDir / sub / f'{tp:02}_{ch}.tif'
                     imgDirs.append(imgDir)
-                imgDirs = natsort.natsorted(imgDirs)
+                imgDirs = natsorted(imgDirs, alg=ns.PATH)
 
                 # print(f'Image paths for Array {arr + 1} at Time Point {tp} in {ch} channel: {imgDirs}')
                 # print(f'There are {len(imgDirs)} images for '
@@ -69,7 +70,7 @@ def stitchArray(exp):
                 #       f'{ch} channel.')
                 # print(f'There are {len(imgDirs)} paths for this channel: {imgDirs}')
 
-                stitchedImg = tile_stitch(exp, posDict, imgDirs, ch)
+                stitchedImg = tile_stitch(exp, posDict, imgDirs, status)
                 outDir = outDir_main / f'array{arr + 1}_timepoint{tp:02}_{ch}.tif'
                 tiff.imwrite(outDir, stitchedImg)
 
@@ -79,7 +80,7 @@ def stitchArray(exp):
 
     print(f'Stitched composites for '
           f'{exp.numArrs} array(s), '
-          f'{exp.numTimePoints} Time Point(s), and '
+          f'{len(orderTP)} Time Point(s), and '
           f'{len(ch_stitch) + 1} Channel(s).')
 
     print('Stitch complete.')
@@ -103,7 +104,7 @@ def img_pos(exp, arr, positions):
 
 
 # Stitch the images within imgDirs based on image locations.
-def tile_stitch(exp, posDict, dirs):
+def tile_stitch(exp, posDict, dirs, status):
     # print(f'Stitching images for Array {arr + 1} at '
     #       f'Time Point {tp} in '
     #       f'{ch} channel...')
@@ -127,7 +128,7 @@ def tile_stitch(exp, posDict, dirs):
 
     # Resize and convert 16bit to 8bit images before storing in "images" list.
     # imgCount = 1
-    for idx, image in enumerate(dirs):
+    for idx, image in enumerate(tqdm(dirs, desc=status)):
         # Read each array section image.
         with tiff.TiffFile(image) as tif:
             img = tif.asarray()

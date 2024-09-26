@@ -41,7 +41,6 @@ def analyzeFluor(exp):
 
     # Analyze each fluorescence image for each array.
     for arr in range(exp.numArrs):
-        print(f'Processing Array {arr + 1}')
         raftNums = [raft for raft in range(1, (numRafts + 1)) for _ in range(numTP)]
         times = [((tp * interval) + timeOffset) for _ in range(1, (numRafts + 1)) for tp in range(numTP)]
 
@@ -67,7 +66,7 @@ def analyzeFluor(exp):
         intMeans_fromCenter = [[[] for _ in range(numRings)] for _ in ch_tl]
         intMeans_radialSlope = [[] for _ in ch_tl]
 
-        for raft in tqdm(range(1, (numRafts + 1))):
+        for raft in tqdm(range(1, (numRafts + 1)), desc=f'\tArray {arr + 1}'):
             # Dedicated lists for each raft to later append to array-wide lists above.
             numObjs_raft = [[None] * numTP for _ in fluor_channels]
             threshVals_raft = [[None] * numTP for _ in fluor_channels]
@@ -340,7 +339,7 @@ def ROI_borderCheck(thresh):
 
 
 def fromCenter(image, hull, hull_centroid, r, ringWidth):
-    buff = 60  # px
+    buff = 200  # px
     half_buff = int(buff / 2)  # px
 
     image_expand = np.zeros((image.shape[0] + buff, image.shape[1] + buff))

@@ -66,7 +66,8 @@ def analyzeFluor(exp):
         intMeans_fromCenter = [[[] for _ in range(numRings)] for _ in ch_tl]
         intMeans_radialSlope = [[] for _ in ch_tl]
 
-        for raft in tqdm(range(1, (numRafts + 1)), desc=f'\tArray {arr + 1}'):
+        pbar = tqdm(range(1, (numRafts + 1)), desc=f'\tArray {arr + 1}')
+        for raft in pbar:
             # Dedicated lists for each raft to later append to array-wide lists above.
             numObjs_raft = [[None] * numTP for _ in fluor_channels]
             threshVals_raft = [[None] * numTP for _ in fluor_channels]
@@ -214,6 +215,8 @@ def analyzeFluor(exp):
             # print(f'\t\tintMeans_fromCenter: {len(intMeans_fromCenter[0][0])}')
             # print(f'\t\tintMeans_radialSlope: {len(intMeans_radialSlope[0])}')
 
+        pbar.close()
+
         # Create data frame for Array 'arr'.
         df_rafts = saveFluorAnal(exp, ch_end, ch_tl, arr, raftNums, times,
                                  flags_missing, flags_empty, flags_border,
@@ -224,10 +227,7 @@ def analyzeFluor(exp):
         # Grade good/bad rafts.
         raft_grad(exp, arr, df_rafts)
 
-        print(f'Saved fluor data frame for Array {arr + 1}.')
-        print()
-
-    print('Fluorescence analysis complete.')
+    print(f'\tSaved fluor data for {exp.numArrs} Array(s).')
 
 
 def segment_hull(image, flag_show=False):
@@ -339,7 +339,7 @@ def ROI_borderCheck(thresh):
 
 
 def fromCenter(image, hull, hull_centroid, r, ringWidth):
-    buff = 200  # px
+    buff = 100  # px
     half_buff = int(buff / 2)  # px
 
     image_expand = np.zeros((image.shape[0] + buff, image.shape[1] + buff))

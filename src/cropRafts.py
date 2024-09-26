@@ -48,7 +48,8 @@ def cropRafts(exp):
     # Loop through loc_cell for each raft and locate corresponding array subsection folder.
     for arr in range(exp.numArrs):
         raftCount = 0
-        for raft in tqdm(range(0, numRafts), desc=f'\tArray {arr + 1}'):
+        pbar = tqdm(range(0, numRafts), desc=f'\tArray {arr + 1}')
+        for raft in pbar:
             # Check if raft exists at every time point (including separate mask imaging) and if loc_idx is within num of rafts in centroid_cell.
             raft_centroid_cell_count = []
             for tp in range(exp.numTimePoints):
@@ -106,7 +107,8 @@ def cropRafts(exp):
                          imagej=True, metadata={'axes': 'TCYX',
                                                 'channels': [rep_and_stain[f'tl_{ch}'] for ch in ch_tl]})
 
-        print(f'\t(Array {arr + 1}) Cropped {raftCount} rafts\n')
+        pbar.close()
+        print(f'\t(Array {arr + 1}) Cropped {raftCount} rafts')
 
     print('Crop complete.')
 

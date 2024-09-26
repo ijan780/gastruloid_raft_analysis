@@ -39,7 +39,7 @@ def stitchArray(exp):
     for arr in range(exp.numArrs):
         # Stitch mask channel first.
         print(f'\tCurrently processing Array {arr + 1}')
-        status = f'\t\tEndpoint - Channel {exp.channel_mask}'
+        status = f'\tEndpoint - Channel {exp.channel_mask}'
         posDict_mask = img_pos(exp, arr, positions_mask)
         maskDirs = []
         arrDir_mask = exp.endDir / f'{arr + 1}'
@@ -56,7 +56,7 @@ def stitchArray(exp):
         arrDir = exp.dataDir / f'{arr + 1}'
         for tp in orderTP:
             for ch in ch_stitch:
-                status = f'\t\tTime Point {tp:02} - Channel {ch}'
+                status = f'\tTime Point {tp:02} - Channel {ch}'
                 imgDirs = []
                 for sub in os.listdir(arrDir):
                     imgDir = arrDir / sub / f'{tp:02}_{ch}.tif'
@@ -79,11 +79,9 @@ def stitchArray(exp):
                 #       f'{ch} channel...')
 
     print(f'Stitched composites for '
-          f'{exp.numArrs} array(s), '
+          f'{exp.numArrs} Array(s), '
           f'{len(orderTP)} Time Point(s), and '
           f'{len(ch_stitch) + 1} Channel(s).')
-
-    print('Stitch complete.')
 
 # Create dictionary with xy locations in px for all imaging frames of each array from Positions.mat.
 def img_pos(exp, arr, positions):
@@ -128,7 +126,9 @@ def tile_stitch(exp, posDict, dirs, status):
 
     # Resize and convert 16bit to 8bit images before storing in "images" list.
     # imgCount = 1
-    for idx, image in enumerate(tqdm(dirs, desc=status)):
+
+    pbar = tqdm(dirs, desc=status)
+    for idx, image in enumerate(pbar):
         # Read each array section image.
         with tiff.TiffFile(image) as tif:
             img = tif.asarray()
@@ -147,6 +147,7 @@ def tile_stitch(exp, posDict, dirs, status):
         # print(new_y, new_y+img.shape[0], new_x, new_x+img.shape[1])
         stitchedImg[new_y:new_y + img.shape[0], new_x:new_x + img.shape[1]] = img_ff
 
+    pbar.close()
     # print(f'Finished processing {idx + 1} images.')
 
     # Crop stitched image to the bottom right of array before returning rescaled 8bit stitched image.

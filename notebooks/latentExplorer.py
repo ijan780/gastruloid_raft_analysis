@@ -22,9 +22,12 @@ import umap
 # GLR Live
 
 #%%
-dirs_df = [r'C:\Users\MVX\Documents\2 - Data\240805_R2GLR_1.8e6_0-48hrBMP4_0%aneu_4_Analysis\array1_FluorAnalysis_GLR - copy.csv',
-           r'C:\Users\MVX\Documents\2 - Data\240805_R2GLR_1.8e6_0-48hrBMP4_0%aneu_4_Analysis\array2_FluorAnalysis_GLR - copy.csv',
-           ]
+dirs_df = [
+    r'C:\Users\MVX\Documents\2 - Data\Analysis\240722_R2GLR_1.8e6_0-48hrBMP4_0%aneu_2_Analysis\array1_FluorAnalysis_GLR.csv',
+    r'C:\Users\MVX\Documents\2 - Data\Analysis\240729_R2GLR_1.8e6_0-48hrBMP4_0%aneu_3_Analysis\array1_FluorAnalysis_GLR.csv',
+    r'C:\Users\MVX\Documents\2 - Data\Analysis\240805_R2GLR_1.8e6_0-48hrBMP4_0%aneu_4_Analysis\array1_FluorAnalysis_GLR - copy.csv',
+    r'C:\Users\MVX\Documents\2 - Data\Analysis\240805_R2GLR_1.8e6_0-48hrBMP4_0%aneu_4_Analysis\array2_FluorAnalysis_GLR - copy.csv',
+    ]
 
 df_lat_good = pd.DataFrame()
 
@@ -44,7 +47,8 @@ for arr, dir in enumerate(dirs_df):
 
     df_lat_good = pd.concat([df_lat_good, df_lat_good_dir], axis=0)
 
-    feats = df_lat_good.columns.tolist()
+df_lat_good.reset_index(drop=True, inplace=True)
+feats = df_lat_good.columns.tolist()
 
 #%%
 drop_list = ['Array',
@@ -63,6 +67,7 @@ drop_list = ['Array',
              'NumObj_SOX2',
              'ThreshVal_SOX2'
              ]
+drop_list += [ft for ft in feats if 'fromCenter' in ft]
 
 df_lat_drop = df_lat_good.drop(columns=drop_list)
 df_lat_drop.dropna(inplace=True)
@@ -86,6 +91,8 @@ for ft in tqdm(feats):
 
     if 'FArea' in ft:
         umap_df[ft] = [x / 1e5 for x in ft_list]
+    elif 'RadialSlope' in ft:
+        umap_df[ft] = [x * 1e3 for x in ft_list]
     else:
         umap_df[ft] = ft_list
 
@@ -126,7 +133,7 @@ for i, fts in enumerate(feats2):
         elif 'Radius' in ft:
             unit = r'(μm)'
         elif 'RadialSlope' in ft:
-            unit = r'($\mathregular{μm^{-1}}$)'
+            unit = r'($\mathregular{10^{-3}}$ $\mathregular{μm^{-1}}$)'
         else:
             unit = ''
 
@@ -159,7 +166,7 @@ for arr in set(umap_df['Array'].tolist()):
     for raft in set(df_sub['Raft'].tolist()):
         df_sub2 = df_sub[df_sub['Raft'] == raft]
         radSlop = df_sub2['IntMean_RadialSlope_SOX2'].tolist()
-        if not np.any(np.isnan(radSlop)):
+        if not np.any(np.isnan(radSlop)) and len(radSlop) == numTP:
             for i in range(numTP):
                 radSlops[i].append(radSlop[i])
             arrays_rs.append(arr)
@@ -180,7 +187,6 @@ umap_df_rs = pd.DataFrame(umap_out_rs, columns=["UMAP_1","UMAP_2"])
 umap_df_rs['Array'] = arrays_rs
 umap_df_rs['Raft'] = rafts_rs
 
-#%%
 #%%
 rep = ['SOX2']
 feats3 = ['Array', 'Raft']

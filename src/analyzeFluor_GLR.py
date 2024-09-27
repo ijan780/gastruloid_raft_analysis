@@ -99,7 +99,7 @@ def analyzeFluor(exp):
                 # Check for empty raft.
                 fArea_hull = np.sum(hull > 0)
 
-                if (threshVal < 0.3) or (fArea_hull == 0):
+                if (threshVal < 0.15) or (fArea_hull == 0):
                     # print('\t\tEmpty raft!')
                     flags_empty += [1] * numTP
                     flags_border += [None] * numTP
@@ -227,7 +227,7 @@ def analyzeFluor(exp):
         # Grade good/bad rafts.
         raft_grad(exp, arr, df_rafts)
 
-    print(f'\tSaved fluor data for {exp.numArrs} Array(s).')
+    print(f'Saved fluor data for {exp.numArrs} Array(s).')
 
 
 def segment_hull(image, flag_show=False):

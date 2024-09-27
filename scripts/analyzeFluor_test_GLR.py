@@ -11,10 +11,10 @@ from skimage.exposure import rescale_intensity
 
 from src.analyzeFluor_GLR import segment_hull, segment_germ, measure_genFeat, ROI_borderCheck, fromCenter
 
-main_dir = Path(r'C:\Users\MVX\Documents\2 - Data\240729_R2GLR_1.8e6_0-48hrBMP4_0%aneu_3_Analysis\Individual Raft Images')
+main_dir = Path(r'C:\Users\MVX\Documents\2 - Data\240722_R2GLR_1.8e6_0-48hrBMP4_0%aneu_2_Analysis\Individual Raft Images')
 
 arr = '1'
-raft = '001'
+raft = '006'
 numTP = 9
 
 numRafts = 23 * 23
@@ -58,11 +58,11 @@ for idx, ch in enumerate(channels):
         # plt.show()
 
         # Create binary mask.
-        hull, thresh, threshVal = segment_hull(image, flag_show=False)
+        hull, thresh, threshVal = segment_hull(image, flag_show=True)
         masks.append(hull)
 
         fArea_hull = np.sum(hull > 0)
-        if (threshVal < 0.3) or (fArea_hull == 0):
+        if (threshVal < 0.15) or (fArea_hull == 0):
             flag_fail_empty = 1
             break
 
@@ -95,7 +95,7 @@ for idx, ch in enumerate(channels):
             image_norm = rescale_intensity(image, in_range=(1500, 5000))
 
             # Create binary mask.
-            thresh, threshVal = segment_germ(image, thresh, flag_show=False)
+            thresh, threshVal = segment_germ(image, thresh, flag_show=True)
 
             # Measure thresholded image.
             fArea, numObj, den, eccen, radius, intMean, intMean_perpx, _, regions = measure_genFeat(image,

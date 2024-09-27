@@ -20,6 +20,7 @@ centroid_cell = loadmat(Path(r'C:\Users\MVX\Documents\2 - Data\240805_R2GLR_1.8e
 centroid_cell = centroid_cell['Centroid_cell']
 centroid_cell[1,0][16,16].shape[0]
 
+#%%
 import tifffile as tiff
 from skimage import io
 from skimage.exposure import rescale_intensity, equalize_adapthist
@@ -28,7 +29,7 @@ from skimage.filters import threshold_otsu, gaussian
 from skimage.measure import label, regionprops
 import numpy as np
 
-img_path = r'C:\Users\MVX\Documents\2 - Data\240805_R2GLR_1.8e6_0-48hrBMP4_0%aneu_4_Analysis\Individual Raft Images\Endpoint\array2_raft305_end.tif'
+img_path = r'C:\Users\MVX\Documents\2 - Data\240722_R2GLR_1.8e6_0-48hrBMP4_0%aneu_2_Analysis\Individual Raft Images\Endpoint\array1_raft006_end.tif'
 with tiff.TiffFile(img_path) as tif:
     img = tif.pages[0].asarray()
 

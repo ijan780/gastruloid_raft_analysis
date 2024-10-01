@@ -11,10 +11,10 @@ from skimage.exposure import rescale_intensity
 
 from src.analyzeFluor_GLR import segment_hull, segment_germ, measure_genFeat, ROI_borderCheck, fromCenter
 
-main_dir = Path(r'C:\Users\MVX\Documents\2 - Data\Analysis\240722_R2GLR_1.8e6_0-48hrBMP4_0%aneu_2_Analysis\Individual Raft Images')
+main_dir = Path(r'C:\Users\MVX\Documents\2 - Data\Analysis\240805_R2GLR_1.8e6_0-48hrBMP4_0%aneu_4_Analysis\Individual Raft Images')
 
 arr = '1'
-raft = '239'
+raft = '052'
 numTP = 9
 
 numRafts = 23 * 23

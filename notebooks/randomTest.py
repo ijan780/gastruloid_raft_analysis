@@ -26,17 +26,27 @@ from skimage import io
 from skimage.exposure import rescale_intensity, equalize_adapthist
 from skimage.morphology import disk, closing, opening, remove_small_holes, remove_small_objects
 from skimage.filters import threshold_otsu, gaussian
+from skimage.restoration import denoise_bilateral
 from skimage.measure import label, regionprops
 import numpy as np
+import matplotlib.pyplot as plt
 
-img_path = r'C:\Users\MVX\Documents\2 - Data\240722_R2GLR_1.8e6_0-48hrBMP4_0%aneu_2_Analysis\Individual Raft Images\Endpoint\array1_raft006_end.tif'
+img_path = r'C:\Users\MVX\Documents\2 - Data\Analysis\240805_R2GLR_1.8e6_0-48hrBMP4_0%aneu_4_Analysis\Individual Raft Images\Time-lapse\array1_raft052_tl.tif'
 with tiff.TiffFile(img_path) as tif:
-    img = tif.pages[0].asarray()
+    img = tif.pages[1].asarray()
+io.imshow(img)
+plt.show()
 
 img = equalize_adapthist(img) 
 io.imshow(img)
+plt.show()
 
-img = gaussian(img, sigma=2)
+# img = gaussian(img, sigma=2)
+img = denoise_bilateral(img, sigma_spatial=2)
+io.imshow(img)
+plt.show()
+tiff.imwrite(r'C:\Users\MVX\Documents\2 - Data\Analysis\240805_R2GLR_1.8e6_0-48hrBMP4_0%aneu_4_Analysis\Individual Raft Images\Test\array1_raft_052_tp0_denoise.tif',
+             img)
 
 threshVal = threshold_otsu(img)
 thresh = img > threshVal
@@ -45,6 +55,8 @@ print(threshVal)
 
 thresh = opening(thresh, disk(5))
 thresh = remove_small_holes(thresh, area_threshold=5e4)
+io.imshow(thresh)
+plt.show()
 
 labels = label(thresh)
 regions = regionprops(labels)

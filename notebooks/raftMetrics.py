@@ -128,7 +128,8 @@ for arr in arrs:
                 plt.axis('off')
                 divider = make_axes_locatable(ax)
                 cax = divider.append_axes("right", size="5%", pad=0.1)
-                plt.colorbar(im, cax=cax, label='Distance to Nearest Edge')
+                plt.colorbar(im, cax=cax, label='Distance to Nearest Edge (px)')
+                plt.tight_layout()
                 plt.show()
 
                 img_tx_masked_pad = np.pad(img_tx_masked, pad_width=5, mode='constant', constant_values=0)

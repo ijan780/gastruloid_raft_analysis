@@ -563,18 +563,18 @@ axes[0].set_xlabel('', fontweight='bold')
 axes[0].set_xlim(-0.5,1.5)
 axes[0].set_ylabel('Raft Center Thickness (μm)', fontweight='bold')
 axes[0].set_ylim(min(df_raftCen['Measurement']) * 0.96,
-                 max(df_raftCen['Measurement']) * 1.06)
+                 max(df_raftCen['Measurement']) * 1.065)
 axes[0].yaxis.set_major_locator(plt.MaxNLocator(integer=True, nbins=4))
 
 axes[0].plot([0, 0, 1, 1],
-          [max(df_raftCen['Measurement']) + 1.5,
-           max(df_raftCen['Measurement']) + 2,
-           max(df_raftCen['Measurement']) + 2,
-           max(df_raftCen['Measurement']) + 1.5],
+          [max(df_raftCen['Measurement']) + 1,
+           max(df_raftCen['Measurement']) + 1.5,
+           max(df_raftCen['Measurement']) + 1.5,
+           max(df_raftCen['Measurement']) + 1],
           linewidth=2,
           color='k')
 axes[0].text((0 + 1) * 0.5,
-          max(df_raftCen['Measurement']) + 2,
+          max(df_raftCen['Measurement']) + 1.5,
           "n.s.",
           ha='center',
           va='bottom',
@@ -610,19 +610,19 @@ axes[1].set_xticks([0, 1], arr_locs, fontweight='bold')
 axes[1].set_xlabel('', fontweight='bold')
 axes[1].set_xlim(-0.5,1.5)
 axes[1].set_ylabel('Raft Edge Thickness (μm)', fontweight='bold')
-axes[1].set_ylim(min(df_raftEdge['Measurement']) * 0.98,
-                 max(df_raftEdge['Measurement']) * 1.03)
+axes[1].set_ylim(min(df_raftEdge['Measurement']) * 0.99,
+                 max(df_raftEdge['Measurement']) * 1.025)
 axes[1].yaxis.set_major_locator(plt.MaxNLocator(integer=True, nbins=4))
 
 axes[1].plot([0, 0, 1, 1],
-          [max(df_raftEdge['Measurement']) + 1.5,
-           max(df_raftEdge['Measurement']) + 2,
-           max(df_raftEdge['Measurement']) + 2,
-           max(df_raftEdge['Measurement']) + 1.5],
+          [max(df_raftEdge['Measurement']) + 1,
+           max(df_raftEdge['Measurement']) + 1.5,
+           max(df_raftEdge['Measurement']) + 1.5,
+           max(df_raftEdge['Measurement']) + 1],
           linewidth=2,
           color='k')
 axes[1].text((0 + 1) * 0.5,
-          max(df_raftEdge['Measurement']) + 2,
+          max(df_raftEdge['Measurement']) + 1.5,
           "n.s.",
           ha='center',
           va='bottom',

@@ -37,6 +37,9 @@ for array in arrays:
                                (df_fluor['Lo_Int'] == 0)]
     df_fluor_filter['Array'] = [array] * df_fluor_filter.shape[0]
 
+    for ft in var_names[1]:
+        df_fluor_filter[ft] = [(fArea * pxSize**2) for fArea in df_fluor_filter[ft].tolist()]
+
     for ft in var_names[-1]:
         df_fluor_filter[ft] = [(radius * pxSize) for radius in df_fluor_filter[ft].tolist()]
 
@@ -113,7 +116,8 @@ for idx, var_name in enumerate(var_names_plot):
     axes[row, col].set_xlabel('')
     axes[row, col].set_xticks([0, 1, 2, 3], ['Hoechst', 'SOX2', 'BRA', 'CDX2'], fontweight='bold')
 
-axes[0, 0].set_ylabel(r'Fluorescence Area ($\mathregular{10^5}$ $\mathregular{px^2}$)', fontweight='bold')
+axes[0, 0].set_ylabel(r'Fluorescence Area ($\mathregular{10^5}$ $\mathregular{μm^2}$)',
+                      fontweight='bold')
 axes[0, 0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 axes[0, 0].yaxis.get_offset_text().set_visible(False)
 
@@ -127,6 +131,8 @@ plt.tight_layout()
 plt.show()
 
 #%%
+#Need to comment out lo_int filter
+
 plt.rcdefaults()
 sns.set_theme(style='white', font_scale=1.25)
 plt.rcParams['ytick.left'] = True

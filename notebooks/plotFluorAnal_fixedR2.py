@@ -327,13 +327,14 @@ for idx, grad in enumerate(grads):
                                 (df_grad_means['ArrayLoc'] != 'Total')]
     df_sub_mean.reset_index(drop=True, inplace=True)
 
-    sns.swarmplot(ax=axes[row, col],
+    sns.stripplot(ax=axes[row, col],
                   x='ArrayLoc',
                   y='Count',
                   data=df_sub,
                   hue='Array',
                   size=10,
                   alpha=0.75,
+                  jitter=0.3,
                   palette='viridis',
                   legend=False,
                   zorder=1)

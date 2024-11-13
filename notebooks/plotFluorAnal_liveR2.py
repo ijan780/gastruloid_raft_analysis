@@ -8,7 +8,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 import scipy.stats as stats
-from statsmodels.stats.weightstats import DescrStatsW
 
 #%%
 dataDir =  Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Eu & Aneu Gastruloid Fluor Analysis')

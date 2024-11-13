@@ -632,3 +632,213 @@ axes[1].text((0 + 1) * 0.5,
 
 plt.tight_layout()
 plt.show()
+
+#%% [markdown]
+# Raft Grading
+
+#%%
+from pathlib import Path
+import pandas as pd
+import numpy as np
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+dataDirs = [Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Fixed Gastruloid Fluor Analysis'),
+            Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Eu & Aneu Gastruloid Fluor Analysis')]
+gradPaths = []
+for dir in dataDirs:
+    gradPath = [file for file in dir.iterdir() if 'RaftGrading' in file.stem]
+    gradPaths.extend(gradPath)
+
+#%%
+grads = ['Pass', 'Excl_missing', 'Excl_empty', 'Excl_border']
+arrLocs = ['Center', 'Edge', 'Total']
+
+cenRafts = []
+for r in range(2, 21):
+    for c in range(2, 21):
+        cenRafts.append((r * 23) + (c + 1))
+
+arrs_col = []
+grads_col = []
+arrLocs_col = []
+counts_col = []
+
+for idx1, gradPath in enumerate(gradPaths):
+    df_grad = pd.read_csv(gradPath)
+
+    for grad in grads:
+        rafts = [raft for raft in df_grad[grad].tolist() if pd.notna(raft)]
+
+        count = [0, 0]
+        for raft in rafts:
+            if raft in cenRafts:
+                count[0] += 1
+            else:
+                count[1] += 1
+
+        for idx2, arrLoc in enumerate(arrLocs):
+            arrs_col.append(idx1 + 1)
+            grads_col.append(grad)
+
+            arrLocs_col.append(arrLoc)
+
+            if arrLoc != 'Total':
+                counts_col.append(count[idx2])
+            else:
+                counts_col.append(np.sum(count))
+
+df_grad_counts = pd.DataFrame({'Array': arrs_col,
+                               'Grade': grads_col,
+                               'ArrayLoc': arrLocs_col,
+                               'Count': counts_col})
+
+#%%
+grads_col2 = []
+arrLocs_col2 = []
+means_col2 = []
+stdevs_col2 = []
+
+for grad in grads:
+    for arrLoc in arrLocs:
+        grads_col2.append(grad)
+        arrLocs_col2.append(arrLoc)
+
+        df_sub = df_grad_counts[(df_grad_counts['Grade'] == grad) &
+                                (df_grad_counts['ArrayLoc'] == arrLoc)]
+        mean = np.mean(df_sub['Count'])
+        stdev = np.std(df_sub['Count'])
+
+        means_col2.append(mean)
+        stdevs_col2.append(stdev)
+
+df_grad_means = pd.DataFrame({'Grade': grads_col2,
+                              'ArrayLoc': arrLocs_col2,
+                              'Mean': means_col2,
+                              'Stdev': stdevs_col2})
+
+#%%
+grad_labs = ['Pass', 'Missing', 'Empty', 'Border']
+
+#%%
+df_grad_counts.to_csv((dataDir.parent / 'Raft Grading Count_Raw.csv'),
+                      index=False)
+df_grad_means.to_csv((dataDir.parent / 'Raft Grading Count_Mean.csv'),
+                     index=False)
+
+#%%
+plt.rcdefaults()
+sns.set_theme(style='white', font_scale=1.25)
+plt.rcParams['ytick.left'] = True
+fig, axes = plt.subplots(1, 1, figsize=(8, 4))
+
+df_sub = df_grad_counts[df_grad_counts['ArrayLoc'] == 'Total']
+df_sub.reset_index(drop=True, inplace=True)
+df_sub_mean = df_grad_means[df_grad_means['ArrayLoc'] == 'Total']
+df_sub_mean.reset_index(drop=True, inplace=True)
+
+sns.stripplot(ax=axes,
+              x='Grade',
+              y='Count',
+              data=df_sub,
+              hue='Array',
+              size=12,
+              alpha=0.75,
+              jitter=0.3,
+              palette='viridis',
+              legend=False,
+              zorder=1)
+axes.errorbar(x=df_sub_mean['Grade'],
+             y=df_sub_mean['Mean'],
+             yerr=df_sub_mean['Stdev'],
+             fmt='none',
+             color='black',
+             capsize=10,
+             capthick=1.5,
+             marker='_',
+             markersize=40,
+             markeredgewidth=3,
+             linewidth=3,
+             zorder=2)
+for i, row in df_sub_mean.iterrows():
+    axes.hlines(y=row['Mean'],
+               xmin= (i - 0.15),
+               xmax= (i + 0.15),
+               colors='black',
+               linewidth=3,
+               zorder=3)
+
+axes.set_xlabel('')
+axes.set_xticks([0, 1, 2, 3],
+                grad_labs,
+                fontweight='bold')
+axes.set_ylabel('Number of Rafts', fontweight='bold')
+axes.set_ylim(0, (np.max(df_sub['Count']) * 1.1))
+
+plt.tight_layout()
+plt.show()
+
+#%%
+arrLocs_plot = arrLocs[:-1]
+
+plt.rcdefaults()
+sns.set_theme(style='white', font_scale=1.25)
+plt.rcParams['ytick.left'] = True
+fig, axes = plt.subplots(2, 2, figsize=(8, 6))
+
+for idx, grad in enumerate(grads):
+    row = int(idx / 2)
+    col = idx % 2
+    print(row)
+    print(col)
+
+    df_sub = df_grad_counts[(df_grad_counts['Grade'] == grad) &
+                            (df_grad_counts['ArrayLoc'] != 'Total')]
+    df_sub.reset_index(drop=True, inplace=True)
+    df_sub_mean = df_grad_means[(df_grad_means['Grade'] == grad) &
+                                (df_grad_means['ArrayLoc'] != 'Total')]
+    df_sub_mean.reset_index(drop=True, inplace=True)
+
+    sns.stripplot(ax=axes[row, col],
+                  x='ArrayLoc',
+                  y='Count',
+                  data=df_sub,
+                  hue='Array',
+                  size=10,
+                  alpha=0.75,
+                  jitter=0.3,
+                  palette='viridis',
+                  legend=False,
+                  zorder=1)
+
+    axes[row, col].errorbar(x=df_sub_mean['ArrayLoc'],
+                            y=df_sub_mean['Mean'],
+                            yerr=df_sub_mean['Stdev'],
+                            fmt='none',
+                            color='black',
+                            capsize=10,
+                            capthick=2,
+                            marker='_',
+                            markersize=40,
+                            markeredgewidth=2,
+                            linewidth=3,
+                            zorder=2)
+    for i, row2 in df_sub_mean.iterrows():
+        axes[row, col].hlines(y=row2['Mean'],
+                              xmin=(i - 0.2),
+                              xmax=(i + 0.2),
+                              colors='black',
+                              linewidth=2,
+                              zorder=3)
+
+    axes[row, col].set_xlabel('')
+    axes[row, col].set_xticks([0, 1],
+                              arrLocs_plot,
+                              fontweight='bold')
+    axes[row, col].set_xlim(-0.5, 1.5)
+    axes[row, col].set_ylabel(f'{grad_labs[idx]}', fontweight='bold')
+    axes[row, col].set_ylim(0, (np.max(df_sub['Count']) * 1.1))
+
+plt.tight_layout()
+plt.show()

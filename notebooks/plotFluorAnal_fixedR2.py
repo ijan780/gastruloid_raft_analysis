@@ -18,9 +18,6 @@ os.chdir(dataDir)
 arrays = [_ for _ in range(1, 4)]
 pxSize = 1.3163  # um/px
 
-arrays_col = []
-rafts_col = []
-
 chs = ['Blue', 'Green', 'Red', 'FarRed']
 fts = ['ThreshVal', 'FArea', 'Dens', 'Eccen', 'Radius']
 
@@ -252,6 +249,12 @@ df_grad_means = pd.DataFrame({'Grade': grads_col2,
 grad_labs = ['Pass', 'Missing', 'Empty', 'Border']
 
 #%%
+df_grad_counts.to_csv((dataDir.parent / 'Raft Grading Count_Raw.csv'),
+                      index=False)
+df_grad_means.to_csv((dataDir.parent / 'Raft Grading Count_Mean.csv'),
+                     index=False)
+
+#%%
 plt.rcdefaults()
 sns.set_theme(style='white', font_scale=1.25)
 plt.rcParams['ytick.left'] = True
@@ -262,13 +265,14 @@ df_sub.reset_index(drop=True, inplace=True)
 df_sub_mean = df_grad_means[df_grad_means['ArrayLoc'] == 'Total']
 df_sub_mean.reset_index(drop=True, inplace=True)
 
-sns.swarmplot(ax=axes,
+sns.stripplot(ax=axes,
               x='Grade',
               y='Count',
               data=df_sub,
               hue='Array',
               size=12,
               alpha=0.75,
+              jitter=0.3,
               palette='viridis',
               legend=False,
               zorder=1)
@@ -281,7 +285,7 @@ axes.errorbar(x=df_sub_mean['Grade'],
              capthick=1.5,
              marker='_',
              markersize=40,
-             markeredgewidth=1.5,
+             markeredgewidth=3,
              linewidth=3,
              zorder=2)
 for i, row in df_sub_mean.iterrows():
@@ -289,7 +293,7 @@ for i, row in df_sub_mean.iterrows():
                xmin= (i - 0.15),
                xmax= (i + 0.15),
                colors='black',
-               linewidth=2,
+               linewidth=3,
                zorder=3)
 
 axes.set_xlabel('')
@@ -340,16 +344,16 @@ for idx, grad in enumerate(grads):
                             fmt='none',
                             color='black',
                             capsize=10,
-                            capthick=1.5,
+                            capthick=2,
                             marker='_',
                             markersize=40,
-                            markeredgewidth=1.5,
+                            markeredgewidth=2,
                             linewidth=3,
                             zorder=2)
     for i, row2 in df_sub_mean.iterrows():
         axes[row, col].hlines(y=row2['Mean'],
-                              xmin=(i - 0.15),
-                              xmax=(i + 0.15),
+                              xmin=(i - 0.2),
+                              xmax=(i + 0.2),
                               colors='black',
                               linewidth=2,
                               zorder=3)

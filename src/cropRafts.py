@@ -83,8 +83,8 @@ def cropRafts(exp):
                                 arr, endTP, ch)
                 crop_end.append(raftCrop)
             end_img = np.stack(crop_end, axis=0)
-            outDir_end_raft = outDir_end / f'array{arr + 1}_raft{(raft + 1):03}_end.tif'
-            tiff.imwrite(outDir_end_raft, end_img,
+            outPath_end_raft = outDir_end / f'array{arr + 1}_raft{(raft + 1):03}_end.tif'
+            tiff.imwrite(outPath_end_raft, end_img,
                          imagej=True, metadata={'axes': 'CYX',
                                                 'channels': [rep_and_stain[f'end_{ch}'] for ch in ch_end]})
 
@@ -102,8 +102,8 @@ def cropRafts(exp):
                 stacked_ch = np.stack(crop_ch, axis=0)
                 crop_tp.append(stacked_ch)
             tl_img = np.stack(crop_tp, axis=0)
-            outDir_tl_raft = outDir_tl / f'array{arr + 1}_raft{(raft + 1):03}_tl.tif'
-            tiff.imwrite(outDir_tl_raft, tl_img,
+            outPath_tl_raft = outDir_tl / f'array{arr + 1}_raft{(raft + 1):03}_tl.tif'
+            tiff.imwrite(outPath_tl_raft, tl_img,
                          imagej=True, metadata={'axes': 'TCYX',
                                                 'channels': [rep_and_stain[f'tl_{ch}'] for ch in ch_tl]})
 
@@ -128,9 +128,9 @@ def crop(exp, dir, img_row, img_col, loc_idx, centroid_cell, arr, tp, ch):
     raft_loc_y = centroid_cell[arr, tp][img_row, img_col][loc_idx][1]
 
     # Locate subsection folder and specific image file for Time Point 'tp' and Channel 'ch'.
-    imgDir = dir / f'{arr + 1}' / f'{img_row + 1}x{img_col + 1}' / f'{tp:02}_{ch}.tif'
+    imgPath = dir / f'{arr + 1}' / f'{img_row + 1}x{img_col + 1}' / f'{tp:02}_{ch}.tif'
 
-    with tiff.TiffFile(imgDir) as tif:
+    with tiff.TiffFile(imgPath) as tif:
         img = tif.asarray()
 
     # Crop image to specific raft.

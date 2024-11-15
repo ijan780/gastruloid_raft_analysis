@@ -84,15 +84,15 @@ def analyzeFluor(exp):
 
             # Directory of endpoint image.
             dir_end = exp.analDir / 'Individual Raft Images' / 'Endpoint'
-            imageDir_end = dir_end / f'array{arr + 1}_raft{raft:03}_end.tif'
+            imagePath_end = dir_end / f'array{arr + 1}_raft{raft:03}_end.tif'
 
             # Only process rafts that exist.
-            if imageDir_end.is_file():
+            if imagePath_end.is_file():
                 # print(f'\tExists: Raft {raft}')
                 flags_missing += [0] * numTP
 
                 # Create binary mask for ROI mask.
-                with tiff.TiffFile(imageDir_end) as tif:
+                with tiff.TiffFile(imagePath_end) as tif:
                     image = tif.pages[mask_idx].asarray()
                 hull, thresh, threshVal = segment_hull(image)
 
@@ -134,9 +134,9 @@ def analyzeFluor(exp):
 
 
                             dir_tl = exp.analDir / 'Individual Raft Images' / 'Time-lapse'
-                            imageDir_tl = dir_tl / f'array{arr + 1}_raft{raft:03}_tl.tif'
+                            imagePath_tl = dir_tl / f'array{arr + 1}_raft{raft:03}_tl.tif'
 
-                            with tiff.TiffFile(imageDir_tl) as tif:
+                            with tiff.TiffFile(imagePath_tl) as tif:
                                 image = tif.pages[slice_idx].asarray()
 
                             # Create binary mask.
@@ -411,8 +411,8 @@ def saveFluorAnal(exp, ch_end, ch_tl, arr, raftNums, times,
 
     df_rafts = df_rafts.sort_values(by=['Raft', 'Time'], ignore_index=True)
 
-    outDir_fanal = exp.analDir / f'array{arr + 1}_FluorAnalysis_GLR.csv'
-    df_rafts.to_csv(outDir_fanal, header=True, index=False)
+    outPath_fanal = exp.analDir / f'array{arr + 1}_FluorAnalysis_GLR.csv'
+    df_rafts.to_csv(outPath_fanal, header=True, index=False)
 
     return df_rafts
 
@@ -446,8 +446,8 @@ def raft_grad(exp, arr, df_rafts):
                             "Excl_border": grades[4],
                             })
 
-    outDir_grad = exp.analDir / f'array{arr + 1}_RaftGrading_GLR.csv'
-    df_grad.to_csv(outDir_grad, header=True, index=False)
+    outPath_grad = exp.analDir / f'array{arr + 1}_RaftGrading_GLR.csv'
+    df_grad.to_csv(outPath_grad, header=True, index=False)
 
 
 # Run analysis without running raftImageAnalysis_main.py.

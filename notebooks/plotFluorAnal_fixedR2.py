@@ -52,6 +52,7 @@ for array in arrays:
 
 #%%
 arrs_col2 = []
+counts_col2 = []
 var_names_col2 = []
 means_col2 = []
 stdevs_col2 = []
@@ -64,19 +65,22 @@ for arr in arrays:
 
             df_sub = df_fluors[(df_fluors['Array'] == arr) &
                                (df_fluors['variable'] == ft)]
+            count = df_sub.shape[0]
             mean = np.mean(df_sub['value'])
             stdev = np.std(df_sub['value'])
 
+            counts_col2.append(count)
             means_col2.append(mean)
             stdevs_col2.append(stdev)
 
 df_fluor_means = pd.DataFrame({'Array': arrs_col2,
-                         'Feat': var_names_col2,
-                         'Mean': means_col2,
-                         'Stdev': stdevs_col2})
+                               'Count': counts_col2,
+                               'Feat': var_names_col2,
+                               'Mean': means_col2,
+                               'Stdev': stdevs_col2})
 
 #%%
-df_fluor_means.to_csv((dataDir / 'FluorAnalysis_Fixed_Means.csv'),
+df_fluor_means.to_csv((dataDir.parent / 'FluorAnalysis_Fixed_Means.csv'),
                 index=False)
 
 #%%

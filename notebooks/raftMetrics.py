@@ -13,6 +13,7 @@ from scipy.ndimage import distance_transform_edt
 import pandas as pd
 import matplotlib.pyplot as plt
 
+#%%
 dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\DIC\3. 800x800x104um\241029_Beads_Compiled')
 arrs = [1, 2, 3]
 locs = ['center', 'edge']
@@ -192,23 +193,23 @@ df_beads_mean.to_csv((dataDir / 'Bead Distribution_Means.csv'),
                 index=False)
 
 #%%
+dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\DIC\3. 800x800x104um\241029_Beads_Compiled')
+df_beads = pd.read_csv(dataDir / 'Bead Distribution.csv')
+df_beads_mean = pd.read_csv(dataDir / 'Bead Distribution_Means.csv')
+
+#%%
 import scipy.stats as stats
 
-ttest_beadDens = stats.ttest_ind(a=df_beads_mean[(df_beads_mean['Location'] == 'center')
-                                                     & (df_beads_mean['Location'] == 'center')
-                                                     ]['BeadDens_Mean'],
-                                     b=df_beads_mean[(df_beads_mean['Location'] == 'edge')
-                                                     & (df_beads_mean['Location'] == 'edge')
-                                                     ]['BeadDens_Mean'],
-                                     equal_var=True)
+df_center = df_beads_mean[(df_beads_mean['Location'] == 'center')]
+df_edge = df_beads_mean[(df_beads_mean['Location'] == 'edge')]
+
+ttest_beadDens = stats.ttest_ind(a=df_center['BeadDens_Mean'],
+                                 b=df_edge['BeadDens_Mean'],
+                                 equal_var=True)
 print(f'Bead Area Dens: {ttest_beadDens}')
 
-ttest_fromEdge = stats.ttest_ind(a=df_beads_mean[(df_beads_mean['Location'] == 'center')
-                                                 & (df_beads_mean['Location'] == 'center')
-                                                 ]['FromEdge_Mean'],
-                                 b=df_beads_mean[(df_beads_mean['Location'] == 'edge')
-                                                 & (df_beads_mean['Location'] == 'edge')
-                                                 ]['FromEdge_Mean'],
+ttest_fromEdge = stats.ttest_ind(a=df_center['FromEdge_Mean'],
+                                 b=df_edge['FromEdge_Mean'],
                                  equal_var=True)
 print(f'From Edge: {ttest_fromEdge}')
 
@@ -246,25 +247,25 @@ axes[0].set_xticks([0, 1], ['Center', 'Edge'], fontweight='bold')
 axes[0].set_xlabel('', fontweight='bold')
 axes[0].set_xlim(-0.5,1.5)
 axes[0].set_ylabel('Bead Density', fontweight='bold')
-axes[0].set_ylim(min(df_beads['BeadDens']) * 0.9,
-                 max(df_beads['BeadDens']) * 1.12)
+minMax = [min(df_beads['BeadDens']), max(df_beads['BeadDens'])]
+axes[0].set_ylim(minMax[0] * 0.9,
+                 minMax[1] * 1.12)
 axes[0].yaxis.set_major_locator(plt.MaxNLocator(nbins=4))
 
-axes[0].plot([0, 0, 1, 1], 
-             [max(df_beads['BeadDens']) + 1e-3,
-              max(df_beads['BeadDens']) + 1.5e-3,
-              max(df_beads['BeadDens']) + 1.5e-3,
-              max(df_beads['BeadDens']) + 1e-3],
-             linewidth=2, 
+axes[0].plot([0, 0, 1, 1],
+             [minMax[1] * 1.05,
+              minMax[1] * 1.07,
+              minMax[1] * 1.07,
+              minMax[1] * 1.05],
+             linewidth=2,
              color='k')
-axes[0].text((0+1)*0.5, 
-             max(df_beads['BeadDens']) + 1.5e-3,
+axes[0].text((0 + 1) * 0.5,
+             minMax[1] * 1.07,
              "n.s.",
-             ha='center', 
-             va='bottom', 
+             ha='center',
+             va='bottom',
              color='k',
-             fontsize=16
-            )
+             fontsize=16)
 
 sns.stripplot(ax=axes[1],
               x='Location',
@@ -292,25 +293,25 @@ axes[1].set_xticks([0, 1], ['Center', 'Edge'], fontweight='bold')
 axes[1].set_xlabel('', fontweight='bold')
 axes[1].set_xlim(-0.5, 1.5)
 axes[1].set_ylabel('Distance from Edge (μm)', fontweight='bold')
-axes[1].set_ylim(min(df_beads['FromEdge_Mean']) * 0.9,
-                 max(df_beads['FromEdge_Mean']) * 1.1)
+minMax = [min(df_beads['FromEdge_Mean']), max(df_beads['FromEdge_Mean'])]
+axes[1].set_ylim(minMax[0] * 0.9,
+                 minMax[1] * 1.12)
 axes[1].yaxis.set_major_locator(plt.MaxNLocator(nbins=4))
 
 axes[1].plot([0, 0, 1, 1],
-             [max(df_beads['FromEdge_Mean']) + 0.5,
-              max(df_beads['FromEdge_Mean']) + 1,
-              max(df_beads['FromEdge_Mean']) + 1,
-              max(df_beads['FromEdge_Mean']) + 0.5],
+             [minMax[1] * 1.05,
+              minMax[1] * 1.07,
+              minMax[1] * 1.07,
+              minMax[1] * 1.05],
              linewidth=2,
              color='k')
-axes[1].text((0+1)*0.5,
-             max(df_beads['FromEdge_Mean']) + 1,
+axes[1].text((0 + 1) * 0.5,
+             minMax[1] * 1.07,
              "n.s.",
              ha='center',
              va='bottom',
              color='k',
-             fontsize=16
-            )
+             fontsize=16)
 
 plt.tight_layout()
 plt.show()
@@ -445,23 +446,23 @@ df_thicks_means2 = pd.DataFrame({'Array': arrs_thick_col2,
 #%%
 import scipy.stats as stats
 
-arrCenters_edge = df_edges_means2[df_edges_means2['ArrayLoc'] == 'Center']['Mean'].tolist()
-arrEdges_edge = df_edges_means2[df_edges_means2['ArrayLoc'] == 'Edge']['Mean'].tolist()
-ttest_edge = stats.ttest_ind(a=arrCenters_edge, b=arrEdges_edge, equal_var=False)
+arrCenters_edge = df_edges_means2[df_edges_means2['ArrayLoc'] == 'Center']['Mean']
+arrEdges_edge = df_edges_means2[df_edges_means2['ArrayLoc'] == 'Edge']['Mean']
+ttest_edge = stats.ttest_ind(a=arrCenters_edge, b=arrEdges_edge, equal_var=True)
 print(f'Raft Edges: {ttest_edge}')
 
 center_arrCenters_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Center') &
-                                           (df_thicks_means2['RaftLoc'] == 'Center')]['Mean'].tolist()
+                                           (df_thicks_means2['RaftLoc'] == 'Center')]['Mean']
 center_arrEdges_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Edge') &
-                                         (df_thicks_means2['RaftLoc'] == 'Center')]['Mean'].tolist()
-ttest_center_thick = stats.ttest_ind(a=center_arrCenters_thick, b=center_arrEdges_thick, equal_var=False)
+                                         (df_thicks_means2['RaftLoc'] == 'Center')]['Mean']
+ttest_center_thick = stats.ttest_ind(a=center_arrCenters_thick, b=center_arrEdges_thick, equal_var=True)
 print(f'Raft Center Thickness: {ttest_center_thick}')
 
 edge_arrCenters_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Center') &
-                                         (df_thicks_means2['RaftLoc'] == 'Edge')]['Mean'].tolist()
+                                         (df_thicks_means2['RaftLoc'] == 'Edge')]['Mean']
 edge_arrEdges_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Edge') &
-                                       (df_thicks_means2['RaftLoc'] == 'Edge')]['Mean'].tolist()
-ttest_edge_thick = stats.ttest_ind(a=edge_arrCenters_thick, b=edge_arrEdges_thick, equal_var=False)
+                                       (df_thicks_means2['RaftLoc'] == 'Edge')]['Mean']
+ttest_edge_thick = stats.ttest_ind(a=edge_arrCenters_thick, b=edge_arrEdges_thick, equal_var=True)
 print(f'Raft Edge Thickness: {ttest_edge_thick}')
 
 #%%
@@ -505,25 +506,25 @@ axes.set_xticks([0, 1], arr_locs, fontweight='bold')
 axes.set_xlabel('', fontweight='bold')
 axes.set_xlim(-0.5, 1.5)
 axes.set_ylabel('Raft Edge Length (μm)', fontweight='bold')
+minMax = [min(df_edges_means['Measurement']), max(df_edges_means['Measurement'])]
 axes.set_ylim(min(df_edges_means['Measurement']) * 0.998,
               max(df_edges_means['Measurement']) * 1.004)
 axes.yaxis.set_major_locator(plt.MaxNLocator(integer=True, nbins=4))
 
 axes.plot([0, 0, 1, 1],
-          [max(df_edges_means['Measurement']) + 1,
-           max(df_edges_means['Measurement']) + 1.5,
-           max(df_edges_means['Measurement']) + 1.5,
-           max(df_edges_means['Measurement']) + 1],
+          [minMax[1] + 1,
+           minMax[1] + 1.5,
+           minMax[1] + 1.5,
+           minMax[1] + 1],
           linewidth=2,
           color='k')
 axes.text((0 + 1) * 0.5,
-          max(df_edges_means['Measurement']) + 1.5,
+          minMax[1] + 1.5,
           "n.s.",
           ha='center',
           va='bottom',
           color='k',
-          fontsize=16
-          )
+          fontsize=16)
 
 plt.tight_layout()
 plt.show()
@@ -561,26 +562,26 @@ sns.swarmplot(ax=axes[0],
 axes[0].set_xticks([0, 1], arr_locs, fontweight='bold')
 axes[0].set_xlabel('', fontweight='bold')
 axes[0].set_xlim(-0.5,1.5)
+minMax = [min(df_raftCen['Measurement']), max(df_raftCen['Measurement'])]
 axes[0].set_ylabel('Raft Center Thickness (μm)', fontweight='bold')
-axes[0].set_ylim(min(df_raftCen['Measurement']) * 0.96,
-                 max(df_raftCen['Measurement']) * 1.065)
+axes[0].set_ylim(minMax[0] * 0.96,
+                 minMax[1] * 1.065)
 axes[0].yaxis.set_major_locator(plt.MaxNLocator(integer=True, nbins=4))
 
 axes[0].plot([0, 0, 1, 1],
-          [max(df_raftCen['Measurement']) + 1,
-           max(df_raftCen['Measurement']) + 1.5,
-           max(df_raftCen['Measurement']) + 1.5,
-           max(df_raftCen['Measurement']) + 1],
-          linewidth=2,
-          color='k')
+             [minMax[1] + 1,
+              minMax[1] + 1.5,
+              minMax[1] + 1.5,
+              minMax[1] + 1],
+             linewidth=2,
+             color='k')
 axes[0].text((0 + 1) * 0.5,
-          max(df_raftCen['Measurement']) + 1.5,
-          "n.s.",
-          ha='center',
-          va='bottom',
-          color='k',
-          fontsize=16
-          )
+             minMax[1] + 1.5,
+             "n.s.",
+             ha='center',
+             va='bottom',
+             color='k',
+             fontsize=16)
 
 df_raftEdge = df_thicks_means[df_thicks_means['RaftLoc'] == 'Edge']
 df_raftEdge_mean = df_thicks_means2[df_thicks_means2['RaftLoc'] == 'Edge']
@@ -610,25 +611,26 @@ axes[1].set_xticks([0, 1], arr_locs, fontweight='bold')
 axes[1].set_xlabel('', fontweight='bold')
 axes[1].set_xlim(-0.5,1.5)
 axes[1].set_ylabel('Raft Edge Thickness (μm)', fontweight='bold')
-axes[1].set_ylim(min(df_raftEdge['Measurement']) * 0.99,
-                 max(df_raftEdge['Measurement']) * 1.025)
+minMax = [min(df_raftEdge['Measurement']), max(df_raftEdge['Measurement'])]
+axes[1].set_ylim(minMax[0] * 0.99,
+                 minMax[1] * 1.025)
 axes[1].yaxis.set_major_locator(plt.MaxNLocator(integer=True, nbins=4))
 
 axes[1].plot([0, 0, 1, 1],
-          [max(df_raftEdge['Measurement']) + 1,
-           max(df_raftEdge['Measurement']) + 1.5,
-           max(df_raftEdge['Measurement']) + 1.5,
-           max(df_raftEdge['Measurement']) + 1],
-          linewidth=2,
-          color='k')
+             [minMax[1] + 1,
+              minMax[1] + 1.5,
+              minMax[1] + 1.5,
+              minMax[1] + 1],
+             linewidth=2,
+             color='k')
 axes[1].text((0 + 1) * 0.5,
-          max(df_raftEdge['Measurement']) + 1.5,
-          "n.s.",
-          ha='center',
-          va='bottom',
-          color='k',
-          fontsize=16
-          )
+             minMax[1] + 1.5,
+             "n.s.",
+             ha='center',
+             va='bottom',
+             color='k',
+             fontsize=16
+             )
 
 plt.tight_layout()
 plt.show()
@@ -644,8 +646,9 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-dataDirs = [Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Fixed Gastruloid Fluor Analysis'),
-            Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Eu & Aneu Gastruloid Fluor Analysis')]
+dataDirs = [Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Eu & Aneu Gastruloid Fluor Analysis')]
+# dataDirs = [Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Fixed Gastruloid Fluor Analysis'),
+#             Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Eu & Aneu Gastruloid Fluor Analysis')]
 gradPaths = []
 for dir in dataDirs:
     gradPath = [file for file in dir.iterdir() if 'RaftGrading' in file.stem]
@@ -669,7 +672,12 @@ for idx1, gradPath in enumerate(gradPaths):
     df_grad = pd.read_csv(gradPath)
 
     for grad in grads:
-        rafts = [raft for raft in df_grad[grad].tolist() if pd.notna(raft)]
+        if grad == 'Pass':
+            rafts = ([int(raft) for raft in df_grad['Pass'].tolist() if pd.notna(raft)] +
+                     [int(raft) for raft in df_grad['Fail'].tolist() if pd.notna(raft)])
+            print(idx1, len(rafts))
+        else:
+            rafts = [int(raft) for raft in df_grad[grad].tolist() if pd.notna(raft)]
 
         count = [0, 0]
         for raft in rafts:
@@ -689,10 +697,23 @@ for idx1, gradPath in enumerate(gradPaths):
             else:
                 counts_col.append(np.sum(count))
 
+# %%
+percRafts_col = []
+for idx, arrLoc in enumerate(arrLocs_col):
+    percRaft = 0
+    if arrLoc == 'Total':
+        percRaft = counts_col[idx] / 23**2
+    elif arrLoc == 'Center':
+        percRaft = counts_col[idx] / len(cenRafts)
+    elif arrLoc == 'Edge':
+        percRaft = counts_col[idx] / (23**2 - len(cenRafts))
+    percRafts_col.append(percRaft * 100)
+
 df_grad_counts = pd.DataFrame({'Array': arrs_col,
                                'Grade': grads_col,
                                'ArrayLoc': arrLocs_col,
-                               'Count': counts_col})
+                               'Count': counts_col,
+                               'PercRaft': percRafts_col})
 
 #%%
 grads_col2 = []
@@ -707,8 +728,8 @@ for grad in grads:
 
         df_sub = df_grad_counts[(df_grad_counts['Grade'] == grad) &
                                 (df_grad_counts['ArrayLoc'] == arrLoc)]
-        mean = np.mean(df_sub['Count'])
-        stdev = np.std(df_sub['Count'])
+        mean = np.mean(df_sub['PercRaft'])
+        stdev = np.std(df_sub['PercRaft'])
 
         means_col2.append(mean)
         stdevs_col2.append(stdev)
@@ -722,9 +743,9 @@ df_grad_means = pd.DataFrame({'Grade': grads_col2,
 grad_labs = ['Pass', 'Missing', 'Empty', 'Border']
 
 #%%
-df_grad_counts.to_csv((dataDir.parent / 'Raft Grading Count_Raw.csv'),
+df_grad_counts.to_csv((dataDirs[0].parent / 'Raft Grading Count_Raw.csv'),
                       index=False)
-df_grad_means.to_csv((dataDir.parent / 'Raft Grading Count_Mean.csv'),
+df_grad_means.to_csv((dataDirs[0].parent / 'Raft Grading Count_Mean.csv'),
                      index=False)
 
 #%%
@@ -740,7 +761,7 @@ df_sub_mean.reset_index(drop=True, inplace=True)
 
 sns.stripplot(ax=axes,
               x='Grade',
-              y='Count',
+              y='PercRaft',
               data=df_sub,
               hue='Array',
               size=12,
@@ -773,14 +794,25 @@ axes.set_xlabel('')
 axes.set_xticks([0, 1, 2, 3],
                 grad_labs,
                 fontweight='bold')
-axes.set_ylabel('Number of Rafts', fontweight='bold')
-axes.set_ylim(0, (np.max(df_sub['Count']) * 1.1))
+axes.set_ylabel('% Rafts', fontweight='bold')
+axes.set_ylim(0, (np.max(df_sub['PercRaft']) * 1.1))
 
 plt.tight_layout()
 plt.show()
 
 #%%
+for grad in grads:
+    df_sub = df_grad_counts[df_grad_counts['Grade'] == grad]
+    df_center = df_sub[df_sub['ArrayLoc'] == 'Center']
+    df_edge = df_sub[df_sub['ArrayLoc'] == 'Edge']
+    ttest = stats.ttest_ind(a=df_center['PercRaft'],
+                            b=df_edge['PercRaft'],
+                            equal_var=True)
+    print(f'{grad}: {ttest}')
+
+#%%
 arrLocs_plot = arrLocs[:-1]
+sig = ['*', '*', 'n.s.', 'n.s.']
 
 plt.rcdefaults()
 sns.set_theme(style='white', font_scale=1.25)
@@ -790,8 +822,6 @@ fig, axes = plt.subplots(2, 2, figsize=(8, 6))
 for idx, grad in enumerate(grads):
     row = int(idx / 2)
     col = idx % 2
-    print(row)
-    print(col)
 
     df_sub = df_grad_counts[(df_grad_counts['Grade'] == grad) &
                             (df_grad_counts['ArrayLoc'] != 'Total')]
@@ -802,7 +832,7 @@ for idx, grad in enumerate(grads):
 
     sns.stripplot(ax=axes[row, col],
                   x='ArrayLoc',
-                  y='Count',
+                  y='PercRaft',
                   data=df_sub,
                   hue='Array',
                   size=10,
@@ -837,8 +867,30 @@ for idx, grad in enumerate(grads):
                               arrLocs_plot,
                               fontweight='bold')
     axes[row, col].set_xlim(-0.5, 1.5)
-    axes[row, col].set_ylabel(f'{grad_labs[idx]}', fontweight='bold')
-    axes[row, col].set_ylim(0, (np.max(df_sub['Count']) * 1.1))
+    axes[row, col].set_ylabel(f'% {grad_labs[idx]}', fontweight='bold')
+    max_ylim = np.max(df_sub['PercRaft'])
+    axes[row, col].set_ylim(0, (max_ylim * 1.22))
+
+    axes[row, col].plot([0, 0, 1, 1],
+                        [max_ylim * 1.07,
+                         max_ylim * 1.1,
+                         max_ylim * 1.1,
+                         max_ylim * 1.07],
+                        linewidth=2,
+                        color='k')
+    if sig[idx] == 'n.s.':
+        height_factor = 1.1
+    else:
+        height_factor = 1.06
+
+    axes[row, col].text((0 + 1) * 0.5,
+                        max_ylim * height_factor,
+                        sig[idx],
+                        ha='center',
+                        va='bottom',
+                        color='k',
+                        fontsize=16
+                        )
 
 plt.tight_layout()
 plt.show()

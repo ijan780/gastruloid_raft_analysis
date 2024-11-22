@@ -328,7 +328,7 @@ axes[0].plot([0, 0, 1, 1],
              linewidth=2, 
              color='k')
 axes[0].text((0+1)*0.5, 
-             max(nog)+0.1,
+             max(nog)+0.07,
              "**", 
              ha='center', 
              va='bottom', 
@@ -421,7 +421,7 @@ sns.scatterplot(ax=axes[0],
 m, b = np.polyfit(data_nog['NucDen'], data_nog['2^-ddCT'], 1)
 # X_plot = np.linspace(axes[0].get_xlim()[0],axes[0].get_xlim()[1],100)
 X_plot = np.linspace(0,1,100)
-axes[0].plot(X_plot, m*X_plot + b, '-', color='orchid', linewidth=2)
+axes[0].plot(X_plot, m*X_plot + b, '--', color='orchid', linewidth=2)
 axes[0].set_xlabel('Nuclei Density', fontweight='bold')
 axes[0].set_ylabel('NOG Relative Expression', fontweight='bold')
 axes[0].set_xlim(0.2,1)
@@ -446,7 +446,7 @@ sns.scatterplot(ax=axes[1],
 m, b = np.polyfit(data_krt['NucDen'], data_krt['2^-ddCT'], 1)
 # X_plot = np.linspace(axes[0].get_xlim()[0],axes[0].get_xlim()[1],100)
 X_plot = np.linspace(0,1,100)
-axes[1].plot(X_plot, m*X_plot + b, '-', color='orchid', linewidth=2)
+axes[1].plot(X_plot, m*X_plot + b, '--', color='orchid', linewidth=2)
 axes[1].set_xlabel('Nuclei Density', fontweight='bold')
 axes[1].set_ylabel('KRT7 Relative Expression', fontweight='bold')
 axes[1].set_xlim(0.2,1)

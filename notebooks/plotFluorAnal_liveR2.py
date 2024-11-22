@@ -79,46 +79,51 @@ df_means_list = [df_means_eu, df_means_an]
 ttest_nucDen = stats.ttest_ind(a=df_means_eu[df_means_eu['Feat'] == 'NucDen']['Mean'],
                                b=df_means_an[df_means_an['Feat'] == 'NucDen']['Mean'],
                                equal_var=True)
-print(ttest_nucDen)
+print(f'NucDen: {ttest_nucDen}')
 
 ttest_hull = stats.ttest_ind(a=df_means_eu[df_means_eu['Feat'] == 'FArea_Hull']['Mean'],
                                b=df_means_an[df_means_an['Feat'] == 'FArea_Hull']['Mean'],
                                equal_var=True)
-print(ttest_hull)
+print(f'Hull: {ttest_hull}')
 
+#%%
 ploids_col3 = []
 feats_col3 = []
-weightMeans_col3 = []
-weightSEs_col3 = []
+means_col3 = []
+sems_col3 = []
 
 for idx, ploid in enumerate(ploid_labs):
     for ft in ['NucDen', 'FArea_Hull']:
         df_means_ploid = df_means_list[idx]
         df_means_ft = df_means_ploid[df_means_ploid['Feat'] == ft]
 
-        means = np.array(df_means_ft['Mean'].tolist())
-        sampSizes = np.array(df_means_ft['Count'].tolist())
-        stdevs = np.array(df_means_ft['Stdev'].tolist())
+        print(df_means_ft['Mean'].tolist())
+        mean = np.mean(df_means_ft['Mean'].tolist())
+        sem = np.std(df_means_ft['Mean'].tolist()) / np.sqrt(len(df_means_ft['Mean'].tolist()))
 
-        weightMean = np.sum(means * sampSizes) / np.sum(sampSizes)
-        weightVar = np.sum(sampSizes * (stdevs**2 + (means - weightMean)**2)) / np.sum(sampSizes)
-        weightStdev = np.sqrt(weightVar)
-        weightSE = weightStdev / np.sqrt(np.sum(sampSizes))
+        # means = np.array(df_means_ft['Mean'].tolist())
+        # sampSizes = np.array(df_means_ft['Count'].tolist())
+        # stdevs = np.array(df_means_ft['Stdev'].tolist())
+        #
+        # weightMean = np.sum(means * sampSizes) / np.sum(sampSizes)
+        # weightVar = np.sum(sampSizes * (stdevs**2 + (means - weightMean)**2)) / np.sum(sampSizes)
+        # weightStdev = np.sqrt(weightVar)
+        # weightSE = weightStdev / np.sqrt(np.sum(sampSizes))
 
         ploids_col3.append(ploid)
         feats_col3.append(ft)
-        weightMeans_col3.append(weightMean)
-        weightSEs_col3.append(weightSE)
+        means_col3.append(mean)
+        sems_col3.append(sem)
 
-df_weight = pd.DataFrame({'Ploidy': ploids_col3,
+df_means2 = pd.DataFrame({'Ploidy': ploids_col3,
                           'Feat': feats_col3,
-                          'WeightMean': weightMeans_col3,
-                          'WeightSE': weightSEs_col3})
+                          'Mean': means_col3,
+                          'SEM': sems_col3})
 
 #%%
 df_means.to_csv((dataDir.parent / 'Eu & Aneu Gastruloid Nuclei Density_Mean.csv'),
                 index=False)
-df_weight.to_csv((dataDir.parent / 'Eu & Aneu Gastruloid Nuclei Density_Weighted Mean.csv'),
+df_means2.to_csv((dataDir.parent / 'Eu & Aneu Gastruloid Nuclei Density_Mean2.csv'),
                 index=False)
 
 #%%
@@ -126,8 +131,8 @@ df_fluors_nucDen = df_fluors[df_fluors['variable'] == 'NucDen']
 df_fluors_nucDen.reset_index(drop=True, inplace=True)
 df_means_nucDen = df_means[df_means['Feat'] == 'NucDen']
 df_means_nucDen.reset_index(drop=True, inplace=True)
-df_weight_nucDen = df_weight[df_weight['Feat'] == 'NucDen']
-df_weight_nucDen.reset_index(drop=True, inplace=True)
+df_means2_nucDen = df_means2[df_means2['Feat'] == 'NucDen']
+df_means2_nucDen.reset_index(drop=True, inplace=True)
 
 plt.rcdefaults()
 sns.set_theme(style='white', font_scale=1.25)
@@ -154,9 +159,9 @@ sns.swarmplot(x='Ploidy',
               linewidth=2,
               legend=False,
               zorder=2)
-axes.errorbar(x=df_weight_nucDen['Ploidy'],
-             y=df_weight_nucDen['WeightMean'],
-             yerr=df_weight_nucDen['WeightSE'],
+axes.errorbar(x=df_means2_nucDen['Ploidy'],
+             y=df_means2_nucDen['Mean'],
+             yerr=df_means2_nucDen['SEM'],
              fmt='none',
              color='black',
              capsize=10,
@@ -166,8 +171,8 @@ axes.errorbar(x=df_weight_nucDen['Ploidy'],
              markeredgewidth=3,
              linewidth=3,
              zorder=3)
-for i, row in df_weight_nucDen.iterrows():
-    axes.hlines(y=row['WeightMean'],
+for i, row in df_means2_nucDen.iterrows():
+    axes.hlines(y=row['Mean'],
                xmin= (i - 0.3),
                xmax= (i + 0.3),
                colors='black',
@@ -203,8 +208,8 @@ df_fluors_hull = df_fluors[df_fluors['variable'] == 'FArea_Hull']
 df_fluors_hull.reset_index(drop=True, inplace=True)
 df_means_hull = df_means[df_means['Feat'] == 'FArea_Hull']
 df_means_hull.reset_index(drop=True, inplace=True)
-df_weight_hull = df_weight[df_weight['Feat'] == 'FArea_Hull']
-df_weight_hull.reset_index(drop=True, inplace=True)
+df_means2_hull = df_means2[df_means2['Feat'] == 'FArea_Hull']
+df_means2_hull.reset_index(drop=True, inplace=True)
 
 plt.rcdefaults()
 sns.set_theme(style='white', font_scale=1.25)
@@ -231,9 +236,9 @@ sns.swarmplot(x='Ploidy',
               linewidth=2,
               legend=False,
               zorder=2)
-axes.errorbar(x=df_weight_hull['Ploidy'],
-             y=df_weight_hull['WeightMean'],
-             yerr=df_weight_hull['WeightSE'],
+axes.errorbar(x=df_means2_hull['Ploidy'],
+             y=df_means2_hull['Mean'],
+             yerr=df_means2_hull['SEM'],
              fmt='none',
              color='black',
              capsize=10,
@@ -243,8 +248,8 @@ axes.errorbar(x=df_weight_hull['Ploidy'],
              markeredgewidth=3,
              linewidth=3,
              zorder=3)
-for i, row in df_weight_hull.iterrows():
-    axes.hlines(y=row['WeightMean'],
+for i, row in df_means2_hull.iterrows():
+    axes.hlines(y=row['Mean'],
                xmin= (i - 0.3),
                xmax= (i + 0.3),
                colors='black',

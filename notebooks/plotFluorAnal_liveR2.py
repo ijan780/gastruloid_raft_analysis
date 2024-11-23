@@ -187,7 +187,7 @@ plt.plot([0, 0, 1, 1],
          linewidth=2,
          color='k')
 plt.text((0+1)*.5,
-         max(df_fluors_nucDen['value'])+0.005,
+         max(df_fluors_nucDen['value'])+0.003,
          "***",
          ha='center',
          va='bottom',

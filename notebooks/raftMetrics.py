@@ -444,6 +444,12 @@ df_thicks_means2 = pd.DataFrame({'Array': arrs_thick_col2,
                                  'Stdev': stdev_thick_col2})
 
 #%%
+df_edges_means2.to_csv((dataDir / '800x800x104um Raft Measurements_Mean_Edge_Means.csv'),
+                      index=False)
+df_thicks_means2.to_csv((dataDir / '800x800x104um Raft Measurements_Mean_Thickness_Means.csv'),
+                       index=False)
+
+#%%
 import scipy.stats as stats
 
 arrCenters_edge = df_edges_means2[df_edges_means2['ArrayLoc'] == 'Center']['Mean']
@@ -464,12 +470,6 @@ edge_arrEdges_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Edge') 
                                        (df_thicks_means2['RaftLoc'] == 'Edge')]['Mean']
 ttest_edge_thick = stats.ttest_ind(a=edge_arrCenters_thick, b=edge_arrEdges_thick, equal_var=True)
 print(f'Raft Edge Thickness: {ttest_edge_thick}')
-
-#%%
-df_edges_means2.to_csv((dataDir / '800x800x104um Raft Measurements_Mean_Edge_Means.csv'),
-                      index=False)
-df_thicks_means2.to_csv((dataDir / '800x800x104um Raft Measurements_Mean_Thickness_Means.csv'),
-                       index=False)
 
 #%%
 import seaborn as sns

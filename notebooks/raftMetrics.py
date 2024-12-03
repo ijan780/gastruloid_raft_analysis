@@ -894,3 +894,364 @@ for idx, grad in enumerate(grads):
 
 plt.tight_layout()
 plt.show()
+
+#%% [markdown]
+# Patterning metrics
+
+#%%
+from pathlib import Path
+import pandas as pd
+import numpy as np
+import scipy.stats as stats
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+#%%
+dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241126_Micropattern Staining_Raft')
+arrays = [_ for _ in range(1, 5)]
+arrLocs = ['Center', 'Edge', 'Total']
+cenRafts = []
+for r in range(2, 21):
+    for c in range(2, 21):
+        cenRafts.append((r * 23) + (c + 1))
+grads = ['Good', 'Missing', 'Border']
+
+#%%
+df_counts = pd.read_csv(dataDir / 'Pattern Grading Count.csv')
+
+arrLocs_col = df_counts['ArrayLoc'].tolist()
+counts_col = df_counts['Count'].tolist()
+percRafts = []
+
+for idx, arrLoc in enumerate(arrLocs_col):
+    count = counts_col[idx]
+    if arrLoc == 'Center':
+        percRafts.append(count / len(cenRafts) * 100)
+    elif arrLoc == 'Edge':
+        percRafts.append(count / (23**2 - len(cenRafts)) * 100)
+    elif arrLoc == 'Total':
+        percRafts.append(count / 23**2 * 100)
+df_counts['PercRaft'] = percRafts
+
+#%%
+grads_col2 = []
+arrLocs_col2 = []
+means_col2 = []
+stdevs_col2 = []
+
+for grad in grads:
+    for arrLoc in arrLocs:
+        grads_col2.append(grad)
+        arrLocs_col2.append(arrLoc)
+
+        df_sub = df_counts[(df_counts['Grade'] == grad) &
+                           (df_counts['ArrayLoc'] == arrLoc)]
+        mean = np.mean(df_sub['PercRaft'])
+        stdev = np.std(df_sub['PercRaft'])
+
+        means_col2.append(mean)
+        stdevs_col2.append(stdev)
+
+df_counts_means = pd.DataFrame({'Grade': grads_col2,
+                              'ArrayLoc': arrLocs_col2,
+                              'Mean': means_col2,
+                              'Stdev': stdevs_col2})
+
+#%%
+df_counts.to_csv((dataDir / 'Pattern Grading Count_Perc.csv'), index=False)
+df_counts_means.to_csv((dataDir / 'Pattern Grading Count_Mean.csv'), index=False)
+
+#%%
+plt.rcdefaults()
+sns.set_theme(style='white', font_scale=1.25)
+plt.rcParams['ytick.left'] = True
+fig, axes = plt.subplots(1, 1, figsize=(4, 4))
+
+df_sub = df_counts[df_counts['ArrayLoc'] == 'Total']
+df_sub.reset_index(drop=True, inplace=True)
+df_sub_mean = df_counts_means[df_counts_means['ArrayLoc'] == 'Total']
+df_sub_mean.reset_index(drop=True, inplace=True)
+
+sns.stripplot(ax=axes,
+              x='Grade',
+              y='PercRaft',
+              data=df_sub,
+              hue='Array',
+              size=12,
+              alpha=0.75,
+              jitter=0.2,
+              palette='viridis',
+              legend=False,
+              zorder=1)
+# axes.errorbar(x=df_sub_mean['Grade'],
+#              y=df_sub_mean['Mean'],
+#              yerr=df_sub_mean['Stdev'],
+#              fmt='none',
+#              color='black',
+#              capsize=10,
+#              capthick=1.5,
+#              marker='_',
+#              markersize=40,
+#              markeredgewidth=3,
+#              linewidth=3,
+#              zorder=2)
+# for i, row in df_sub_mean.iterrows():
+#     axes.hlines(y=row['Mean'],
+#                xmin= (i - 0.15),
+#                xmax= (i + 0.15),
+#                colors='black',
+#                linewidth=3,
+#                zorder=3)
+
+axes.set_xlabel('')
+axes.set_xticks([0, 1, 2],
+                grads,
+                fontweight='bold')
+axes.set_ylabel('% Rafts', fontweight='bold')
+axes.set_ylim(0, (np.max(df_sub['PercRaft']) * 1.1))
+
+plt.tight_layout()
+plt.show()
+
+#%%
+for grad in grads:
+    df_sub = df_counts[df_counts['Grade'] == grad]
+    df_center = df_sub[df_sub['ArrayLoc'] == 'Center']
+    df_edge = df_sub[df_sub['ArrayLoc'] == 'Edge']
+    ttest = stats.ttest_ind(a=df_center['PercRaft'],
+                            b=df_edge['PercRaft'],
+                            equal_var=True)
+    print(f'{grad}: {ttest}')
+
+#%%
+arrLocs_plot = arrLocs[:-1]
+sig = ['n.s.', 'n.s.', 'n.s.'] # TODO: need to change
+
+plt.rcdefaults()
+sns.set_theme(style='white', font_scale=1.75)
+plt.rcParams['ytick.left'] = True
+fig, axes = plt.subplots(1, 3, figsize=(15, 6))
+
+for idx, grad in enumerate(grads):
+    df_sub = df_counts[(df_counts['Grade'] == grad) &
+                            (df_counts['ArrayLoc'] != 'Total')]
+    df_sub.reset_index(drop=True, inplace=True)
+    df_sub_mean = df_counts_means[(df_counts_means['Grade'] == grad) &
+                                  (df_counts_means['ArrayLoc'] != 'Total')]
+    df_sub_mean.reset_index(drop=True, inplace=True)
+
+    sns.stripplot(ax=axes[idx],
+                  x='ArrayLoc',
+                  y='PercRaft',
+                  data=df_sub,
+                  hue='Array',
+                  size=20,
+                  alpha=0.75,
+                  jitter=0.2,
+                  palette='viridis',
+                  legend=False,
+                  zorder=1)
+
+    # axes[idx].errorbar(x=df_sub_mean['ArrayLoc'],
+    #                    y=df_sub_mean['Mean'],
+    #                    yerr=df_sub_mean['Stdev'],
+    #                    fmt='none',
+    #                    color='black',
+    #                    capsize=10,
+    #                    capthick=2,
+    #                    marker='_',
+    #                    markersize=40,
+    #                    markeredgewidth=2,
+    #                    linewidth=3,
+    #                    zorder=2)
+    # for i, row2 in df_sub_mean.iterrows():
+    #     axes[idx].hlines(y=row2['Mean'],
+    #                      xmin=(i - 0.2),
+    #                      xmax=(i + 0.2),
+    #                      colors='black',
+    #                      linewidth=2,
+    #                      zorder=3)
+
+    axes[idx].set_xlabel('')
+    axes[idx].set_xticks([0, 1],
+                              arrLocs_plot,
+                              fontweight='bold')
+    axes[idx].set_xlim(-0.5, 1.5)
+    axes[idx].set_ylabel(f'% {grads[idx]}', fontweight='bold')
+    max_ylim = np.max(df_sub['PercRaft'])
+
+    if idx != 1:
+        axes[idx].set_ylim(0, max_ylim * 1.18)
+
+        axes[idx].plot([0, 0, 1, 1],
+                       [max_ylim * 1.07,
+                        max_ylim * 1.1,
+                        max_ylim * 1.1,
+                        max_ylim * 1.07],
+                       linewidth=2,
+                       color='k')
+        if sig[idx] == 'n.s.':
+            height_factor = 1.1
+        else:
+            height_factor = 1.06
+
+        axes[idx].text((0 + 1) * 0.5,
+                       max_ylim * height_factor,
+                       sig[idx],
+                       ha='center',
+                       va='bottom',
+                       color='k',
+                       fontsize=22
+                       )
+
+axes[1].set_ylim(0, 1)
+axes[1].yaxis.set_major_locator(plt.MaxNLocator(nbins=4))
+
+plt.tight_layout()
+plt.show()
+
+#%%
+df_diams = pd.read_csv(dataDir / 'Pattern Diameter.csv')
+arrays = [_ for _ in range(1, 3)]
+arrLocs = ['Center', 'Edge']
+
+#%%
+arrays_col2 = []
+arrLocs_col2 = []
+means_col2 = []
+stdevs_col2 = []
+
+for array in arrays:
+    for arrLoc in arrLocs:
+        arrays_col2.append(array)
+        arrLocs_col2.append(arrLoc)
+
+        df_sub = df_diams[(df_diams['Array'] == array) &
+                          (df_diams['ArrayLoc'] == arrLoc)]
+        diam = df_sub['Diameter'].tolist()
+        means_col2.append(np.mean(diam))
+        stdevs_col2.append(np.std(diam))
+
+df_diams_means = pd.DataFrame({'Array': arrays_col2,
+                               'ArrayLoc': arrLocs_col2,
+                               'Mean': means_col2,
+                               'Stdev': stdevs_col2})
+
+#%%
+import scipy.stats as stats
+
+df_diam_center = df_diams_means[(df_diams_means['Location'] == 'Center')]
+df_diam_edge = df_diams_means[(df_diams_means['Location'] == 'Edge')]
+
+ttest_diam = stats.ttest_ind(a=df_diam_center['Mean'],
+                                 b=df_diam_edge['Mean'],
+                                 equal_var=True)
+print(f'Pattern Diam: {ttest_diam}')
+
+#%%%
+plt.rcdefaults()
+sns.set_theme(style='white', font_scale=1.25)
+plt.rcParams['ytick.left'] = True
+fig, axes = plt.subplots(1, 1, figsize=(4, 4))
+
+sns.stripplot(ax=axes,
+              x='ArrayLoc',
+              y='Diameter',
+              data=df_diams,
+              hue='Array',
+              size=8,
+              palette='colorblind',
+              alpha=0.5,
+              jitter=0.2,
+              legend=False,
+              zorder=1)
+sns.swarmplot(ax=axes,
+              x='ArrayLoc',
+              y='Mean',
+              data=df_diams_means,
+              hue='Array',
+              size=15,
+              palette='colorblind',
+              edgecolor='k',
+              linewidth=2,
+              legend=False,
+              zorder=2)
+axes.set_xticks([0, 1], arrLocs, fontweight='bold')
+axes.set_xlabel('', fontweight='bold')
+axes.set_xlim(-0.5, 1.5)
+axes.set_ylabel('Micropattern Diameter (μm)', fontweight='bold')
+minMax = [min(df_diams['Diameter']), max(df_diams['Diameter'])]
+axes.set_ylim(minMax[0] * 0.97,
+              minMax[1] * 1.025)
+axes.yaxis.set_major_locator(plt.MaxNLocator(integer=True, nbins=4))
+
+axes.plot([0, 0, 1, 1],
+          [minMax[1] * 1.007,
+           minMax[1] * 1.01,
+           minMax[1] * 1.01,
+           minMax[1] * 1.007],
+          linewidth=2,
+          color='k')
+axes.text((0 + 1) * 0.5,
+          minMax[1] * 1.01,
+          "n.s.",
+          ha='center',
+          va='bottom',
+          color='k',
+          fontsize=16)
+
+plt.tight_layout()
+plt.show()
+
+#%%
+df_fromCen = pd.read_csv(dataDir / 'Pattern From Center.csv')
+arrays = [_ for _ in range(1, 3)]
+arrLocs = ['Center', 'Edge']
+patterns = [_ for _ in range(1,9)]
+
+#%%
+print(df_fromCen['Array'].unique())
+# df_fromCen['Array'] = df_fromCen['Array'].astype(int)
+# df_fromCen['Pattern'] = df_fromCen['Pattern'].astype(int)
+
+#%%
+cenDists_col = []
+for array in arrays:
+    for arrLoc in arrLocs:
+        for patt in patterns:
+            df_sub = df_fromCen[(df_fromCen['Array'] == array) &
+                                (df_fromCen['ArrayLoc'] == arrLoc) &
+                                (df_fromCen['Pattern'] == patt)]
+            dists = df_sub['Distance'].tolist()
+            cenDist = (np.max(dists) - np.min(dists)) / 2
+            cenDists_col.append([cenDist] * len(dists))
+df_fromCen['CenterDist'] = cenDists_col
+
+#%%
+# Run only for initialization!
+dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241126_Micropattern Staining_Raft')
+arrays = [_ for _ in range(1, 5)]
+arrLocs = ['Center', 'Edge']
+patts = [_ for _ in range(1, 9)]
+
+arrays_col = []
+arrLocs_col = []
+patts_col = []
+diams_col = []
+
+for array in arrays:
+    for arrLoc in arrLocs:
+        for patt in patts:
+            arrays_col.append(array)
+            arrLocs_col.append(arrLoc)
+            patts_col.append(patt)
+            diams_col.append(None)
+
+df_pattDiams = pd.DataFrame({'Array': arrays_col,
+                             'ArrayLoc': arrLocs_col,
+                             'Pattern': patts_col,
+                             'Diameter': diams_col})
+
+df_pattDiams.to_csv((dataDir / 'Pattern Diameter.csv'),
+                    index=False)

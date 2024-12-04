@@ -1229,14 +1229,14 @@ for array in arrays:
             cenDist = (np.max(dists) - np.min(dists)) / 2
             # print(array, arrLoc, patt, dists)
             cenDists_col.extend(cenDist for dist in dists)
-df_fromCen['CenterDist'] = cenDists_col
+df_fromCen['CenDist'] = cenDists_col
 
 #%%
 fromCenDist_col = []
 dists = df_fromCen['Distance'].tolist()
 for idx, dist in enumerate(dists):
     fromCenDist_col.append(abs(dist - cenDists_col[idx]))
-df_fromCen['FromCenterDist'] = fromCenDist_col
+df_fromCen['FromCenDist'] = fromCenDist_col
 
 #%%
 cenInts_col = []
@@ -1246,9 +1246,9 @@ for array in arrays:
             df_sub = df_fromCen[(df_fromCen['Array'] == array) &
                                 (df_fromCen['ArrayLoc'] == arrLoc) &
                                 (df_fromCen['Pattern'] == patt)]
-            df_sub2 = df_sub[df_sub['FromCenterDist'] < 10]
+            df_sub2 = df_sub[df_sub['FromCenDist'] < 10]
             cenInt = np.mean(df_sub2['Intensity'].astype(float).tolist())
-            print(array, arrLoc, patt, cenInt)
+            # print(array, arrLoc, patt, cenInt)
             cenInts_col.extend([cenInt for _ in range(df_sub.shape[0])])
 df_fromCen['CenInt'] = cenInts_col
 
@@ -1260,8 +1260,16 @@ for idx, cenInt in enumerate(cenInts_col):
 df_fromCen['NormInt'] = normInts_col
 
 #%%
-df_smooth = df_fromCen.sort_values(by='FromCenterDist')
-df_smooth['NormInt_Roll'] = df_smooth['NormInt'].rolling(50).mean()
+df_smooth = df_fromCen.sort_values(by='FromCenDist')
+df_smooth['NormInt_Smooth'] = df_smooth['NormInt'].rolling(50).mean()
+fromCenDists_smooth = df_smooth['FromCenDist'].tolist()
+normInts_smooth = df_smooth['NormInt_Smooth'].tolist()
+i = 0
+thresh = fromCenDists_smooth[0]
+while (normInts_smooth[i] >= 0.9) or (np.isnan(normInts_smooth[i])):
+    thresh = fromCenDists_smooth[i]
+    i += 1
+print(thresh)
 
 plt.rcdefaults()
 sns.set_theme(style='white', font_scale=1.25)
@@ -1272,7 +1280,7 @@ for idx, arrLoc in enumerate(arrLocs):
     df_sub = df_smooth[df_smooth['ArrayLoc'] == arrLoc]
 
     sns.scatterplot(ax=axes[idx],
-                    x='FromCenterDist',
+                    x='FromCenDist',
                     y='NormInt',
                     data=df_sub,
                     hue='Array',
@@ -1282,8 +1290,8 @@ for idx, arrLoc in enumerate(arrLocs):
                     legend=False,
                     zorder=2)
     sns.lineplot(ax=axes[idx],
-                 x='FromCenterDist',
-                 y='NormInt_Roll',
+                 x='FromCenDist',
+                 y='NormInt_Smooth',
                  data=df_smooth,
                  errorbar='sd',
                  hue='Array',
@@ -1301,29 +1309,29 @@ plt.tight_layout()
 plt.show()
 
 #%%
-# Run only for initialization!
-dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241126_Micropattern Staining_Raft')
-arrays = [_ for _ in range(1, 5)]
-arrLocs = ['Center', 'Edge']
-patts = [_ for _ in range(1, 9)]
-
-arrays_col = []
-arrLocs_col = []
-patts_col = []
-diams_col = []
-
-for array in arrays:
-    for arrLoc in arrLocs:
-        for patt in patts:
-            arrays_col.append(array)
-            arrLocs_col.append(arrLoc)
-            patts_col.append(patt)
-            diams_col.append(None)
-
-df_pattDiams = pd.DataFrame({'Array': arrays_col,
-                             'ArrayLoc': arrLocs_col,
-                             'Pattern': patts_col,
-                             'Diameter': diams_col})
-
-df_pattDiams.to_csv((dataDir / 'Pattern Diameter.csv'),
-                    index=False)
+# # Run only for initialization!
+# dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241126_Micropattern Staining_Raft')
+# arrays = [_ for _ in range(1, 5)]
+# arrLocs = ['Center', 'Edge']
+# patts = [_ for _ in range(1, 9)]
+#
+# arrays_col = []
+# arrLocs_col = []
+# patts_col = []
+# diams_col = []
+#
+# for array in arrays:
+#     for arrLoc in arrLocs:
+#         for patt in patts:
+#             arrays_col.append(array)
+#             arrLocs_col.append(arrLoc)
+#             patts_col.append(patt)
+#             diams_col.append(None)
+#
+# df_pattDiams = pd.DataFrame({'Array': arrays_col,
+#                              'ArrayLoc': arrLocs_col,
+#                              'Pattern': patts_col,
+#                              'Diameter': diams_col})
+#
+# df_pattDiams.to_csv((dataDir / 'Pattern Diameter.csv'),
+#                     index=False)

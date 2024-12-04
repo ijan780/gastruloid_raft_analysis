@@ -909,6 +909,8 @@ import matplotlib.pyplot as plt
 
 #%%
 dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241126_Micropattern Staining_Raft')
+
+#%%
 arrays = [_ for _ in range(1, 5)]
 arrLocs = ['Center', 'Edge', 'Total']
 cenRafts = []
@@ -1031,7 +1033,7 @@ sig = ['n.s.', 'n.s.', 'n.s.'] # TODO: need to change
 plt.rcdefaults()
 sns.set_theme(style='white', font_scale=1.75)
 plt.rcParams['ytick.left'] = True
-fig, axes = plt.subplots(1, 3, figsize=(15, 6))
+fig, axes = plt.subplots(1, 3, figsize=(12, 4))
 
 for idx, grad in enumerate(grads):
     df_sub = df_counts[(df_counts['Grade'] == grad) &
@@ -1225,8 +1227,78 @@ for array in arrays:
                                 (df_fromCen['Pattern'] == patt)]
             dists = df_sub['Distance'].tolist()
             cenDist = (np.max(dists) - np.min(dists)) / 2
-            cenDists_col.append([cenDist] * len(dists))
+            # print(array, arrLoc, patt, dists)
+            cenDists_col.extend(cenDist for dist in dists)
 df_fromCen['CenterDist'] = cenDists_col
+
+#%%
+fromCenDist_col = []
+dists = df_fromCen['Distance'].tolist()
+for idx, dist in enumerate(dists):
+    fromCenDist_col.append(abs(dist - cenDists_col[idx]))
+df_fromCen['FromCenterDist'] = fromCenDist_col
+
+#%%
+cenInts_col = []
+for array in arrays:
+    for arrLoc in arrLocs:
+        for patt in patterns:
+            df_sub = df_fromCen[(df_fromCen['Array'] == array) &
+                                (df_fromCen['ArrayLoc'] == arrLoc) &
+                                (df_fromCen['Pattern'] == patt)]
+            df_sub2 = df_sub[df_sub['FromCenterDist'] < 10]
+            cenInt = np.mean(df_sub2['Intensity'].astype(float).tolist())
+            print(array, arrLoc, patt, cenInt)
+            cenInts_col.extend([cenInt for _ in range(df_sub.shape[0])])
+df_fromCen['CenInt'] = cenInts_col
+
+#%%
+normInts_col = []
+ints = df_fromCen['Intensity'].tolist()
+for idx, cenInt in enumerate(cenInts_col):
+    normInts_col.append(ints[idx] / cenInt)
+df_fromCen['NormInt'] = normInts_col
+
+#%%
+df_smooth = df_fromCen.sort_values(by='FromCenterDist')
+df_smooth['NormInt_Roll'] = df_smooth['NormInt'].rolling(50).mean()
+
+plt.rcdefaults()
+sns.set_theme(style='white', font_scale=1.25)
+plt.rcParams['ytick.left'] = True
+fig, axes = plt.subplots(1, 2, figsize=(12, 4), sharey=True)
+
+for idx, arrLoc in enumerate(arrLocs):
+    df_sub = df_smooth[df_smooth['ArrayLoc'] == arrLoc]
+
+    sns.scatterplot(ax=axes[idx],
+                    x='FromCenterDist',
+                    y='NormInt',
+                    data=df_sub,
+                    hue='Array',
+                    size=8,
+                    palette='colorblind',
+                    alpha=0.25,
+                    legend=False,
+                    zorder=2)
+    sns.lineplot(ax=axes[idx],
+                 x='FromCenterDist',
+                 y='NormInt_Roll',
+                 data=df_smooth,
+                 errorbar='sd',
+                 hue='Array',
+                 palette='colorblind',
+                 linewidth=6,
+                 legend=False,
+                 zorder=2)
+
+    axes[idx].set_xlabel(f'Distance from Micropattern Center (μm)\n{arrLoc}', fontweight='bold')
+    axes[idx].set_xlim(0, 290)
+    axes[idx].set_ylabel('Normalized Intensity', fontweight='bold')
+    # axes.yaxis.set_major_locator(plt.MaxNLocator(integer=True, nbins=4))
+
+plt.tight_layout()
+plt.show()
 
 #%%
 # Run only for initialization!

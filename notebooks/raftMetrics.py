@@ -636,7 +636,7 @@ plt.tight_layout()
 plt.show()
 
 #%% [markdown]
-# Raft Grading
+# Raft grading
 
 #%%
 from pathlib import Path
@@ -775,17 +775,14 @@ axes.errorbar(x=df_sub_mean['Grade'],
              yerr=df_sub_mean['Stdev'],
              fmt='none',
              color='black',
-             capsize=10,
-             capthick=1.5,
-             marker='_',
-             markersize=40,
-             markeredgewidth=3,
+             capsize=15,
+             capthick=3,
              linewidth=3,
              zorder=2)
 for i, row in df_sub_mean.iterrows():
     axes.hlines(y=row['Mean'],
-               xmin= (i - 0.15),
-               xmax= (i + 0.15),
+               xmin= (i - 0.3),
+               xmax= (i + 0.3),
                colors='black',
                linewidth=3,
                zorder=3)
@@ -847,19 +844,16 @@ for idx, grad in enumerate(grads):
                             yerr=df_sub_mean['Stdev'],
                             fmt='none',
                             color='black',
-                            capsize=10,
-                            capthick=2,
-                            marker='_',
-                            markersize=40,
-                            markeredgewidth=2,
+                            capsize=15,
+                            capthick=3,
                             linewidth=3,
                             zorder=2)
     for i, row2 in df_sub_mean.iterrows():
         axes[row, col].hlines(y=row2['Mean'],
-                              xmin=(i - 0.2),
-                              xmax=(i + 0.2),
+                              xmin=(i - 0.4),
+                              xmax=(i + 0.4),
                               colors='black',
-                              linewidth=2,
+                              linewidth=3,
                               zorder=3)
 
     axes[row, col].set_xlabel('')
@@ -913,10 +907,7 @@ dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241126_Micro
 #%%
 arrays = [_ for _ in range(1, 5)]
 arrLocs = ['Center', 'Edge', 'Total']
-cenRafts = []
-for r in range(2, 21):
-    for c in range(2, 21):
-        cenRafts.append((r * 23) + (c + 1))
+numCenRafts = (23- (2 * 2)) ** 2
 grads = ['Good', 'Missing', 'Border']
 
 #%%
@@ -929,9 +920,9 @@ percRafts = []
 for idx, arrLoc in enumerate(arrLocs_col):
     count = counts_col[idx]
     if arrLoc == 'Center':
-        percRafts.append(count / len(cenRafts) * 100)
+        percRafts.append(count / numCenRafts * 100)
     elif arrLoc == 'Edge':
-        percRafts.append(count / (23**2 - len(cenRafts)) * 100)
+        percRafts.append(count / (23**2 - numCenRafts) * 100)
     elif arrLoc == 'Total':
         percRafts.append(count / 23**2 * 100)
 df_counts['PercRaft'] = percRafts
@@ -991,17 +982,17 @@ axes.errorbar(x=df_sub_mean['Grade'],
               yerr=df_sub_mean['Stdev'],
               fmt='none',
               color='black',
-              capsize=10,
+              capsize=15,
               capthick=3,
               linewidth=3,
               zorder=2)
 for i, row in df_sub_mean.iterrows():
     axes.hlines(y=row['Mean'],
-               xmin= (i - 0.25),
-               xmax= (i + 0.25),
+               xmin= (i - 0.5),
+               xmax= (i + 0.5),
                colors='black',
                linewidth=3,
-               zorder=3)
+               zorder=1)
 
 axes.set_xlabel('')
 axes.set_xticks([0, 1, 2],
@@ -1057,18 +1048,18 @@ for idx, grad in enumerate(grads):
                        yerr=df_sub_mean['Stdev'],
                        fmt='none',
                        color='black',
-                       capsize=10,
+                       capsize=15,
                        capthick=3,
                        marker='_',
                        linewidth=3,
                        zorder=2)
     for i, row2 in df_sub_mean.iterrows():
         axes[idx].hlines(y=row2['Mean'],
-                         xmin=(i - 0.2),
-                         xmax=(i + 0.2),
+                         xmin=(i - 0.4),
+                         xmax=(i + 0.4),
                          colors='black',
                          linewidth=3,
-                         zorder=3)
+                         zorder=1)
 
     axes[idx].set_xlabel('')
     axes[idx].set_xticks([0, 1],
@@ -1150,6 +1141,7 @@ df_diams_means = pd.DataFrame({'Array': arrays_col2,
                                'Mean': means_col2,
                                'Stdev': stdevs_col2})
 
+
 #%%
 arrLocs_col3 = []
 means_col3 = []
@@ -1166,6 +1158,12 @@ for arrLoc in arrLocs:
 df_diams_means2 = pd.DataFrame({'ArrayLoc': arrLocs_col3,
                                'Mean': means_col3,
                                'Stdev': stdevs_col3})
+
+#%%
+df_diams_means.to_csv((dataDir / 'Pattern Diameter_Mean.csv'),
+                      index = False)
+df_diams_means2.to_csv((dataDir / 'Pattern Diameter_Mean2.csv'),
+                      index = False)
 
 #%%
 import scipy.stats as stats
@@ -1205,7 +1203,7 @@ sns.swarmplot(ax=axes,
               edgecolor='k',
               linewidth=2,
               legend=False,
-              zorder=2)
+              zorder=3)
 axes.set_xticks([0, 1], arrLocs, fontweight='bold')
 axes.set_xlabel('', fontweight='bold')
 axes.set_xlim(-0.5, 1.5)
@@ -1235,18 +1233,18 @@ axes.errorbar(x=df_diams_means2['ArrayLoc'],
               yerr=df_diams_means2['Stdev'],
               fmt='none',
               color='black',
-              capsize=10,
+              capsize=15,
               capthick=3,
               marker='_',
               linewidth=3,
               zorder=2)
 for i, row2 in df_diams_means2.iterrows():
     axes.hlines(y=row2['Mean'],
-                xmin=(i - 0.2),
-                xmax=(i + 0.2),
+                xmin=(i - 0.4),
+                xmax=(i + 0.4),
                 colors='black',
                 linewidth=3,
-                zorder=3)
+                zorder=2)
 
 plt.tight_layout()
 plt.show()
@@ -1316,6 +1314,13 @@ while (normInts_smooth[i] >= 0.8) or (np.isnan(normInts_smooth[i])):
     i += 1
 print(thresh)
 
+#%%
+df_fromCen.to_csv((dataDir / 'Pattern From Center_Norm.csv'),
+                  index = False)
+df_smooth.to_csv((dataDir / 'Pattern From Center_Smooth.csv'),
+                 index = False)
+
+#%%
 plt.rcdefaults()
 sns.set_theme(style='white', font_scale=1.25)
 plt.rcParams['ytick.left'] = True

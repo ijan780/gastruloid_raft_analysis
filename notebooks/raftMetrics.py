@@ -1303,22 +1303,8 @@ for idx, cenInt in enumerate(cenInts_col):
 df_fromCen['NormInt'] = normInts_col
 
 #%%
-df_smooth = df_fromCen.sort_values(by='FromCenDist')
-df_smooth['NormInt_Smooth'] = df_smooth['NormInt'].rolling(50).mean()
-fromCenDists_smooth = df_smooth['FromCenDist'].tolist()
-normInts_smooth = df_smooth['NormInt_Smooth'].tolist()
-i = 0
-thresh = fromCenDists_smooth[0]
-while (normInts_smooth[i] >= 0.8) or (np.isnan(normInts_smooth[i])):
-    thresh = fromCenDists_smooth[i]
-    i += 1
-print(thresh)
-
-#%%
 df_fromCen.to_csv((dataDir / 'Pattern From Center_Norm.csv'),
                   index = False)
-df_smooth.to_csv((dataDir / 'Pattern From Center_Smooth.csv'),
-                 index = False)
 
 #%%
 plt.rcdefaults()
@@ -1327,7 +1313,21 @@ plt.rcParams['ytick.left'] = True
 fig, axes = plt.subplots(1, 2, figsize=(12, 4), sharey=True)
 
 for idx, arrLoc in enumerate(arrLocs):
-    df_sub = df_smooth[df_smooth['ArrayLoc'] == arrLoc]
+    df_sub = df_fromCen[df_fromCen['ArrayLoc'] == arrLoc]
+
+    df_smooth = df_sub.sort_values(by='FromCenDist')
+    df_smooth['NormInt_Smooth'] = df_smooth['NormInt'].rolling(50).mean()
+    df_smooth.to_csv((dataDir / f'Pattern From Center_Smooth_{arrLoc}.csv'),
+                     index=False)
+
+    fromCenDists_smooth = df_smooth['FromCenDist'].tolist()
+    normInts_smooth = df_smooth['NormInt_Smooth'].tolist()
+    i = 0
+    thresh = fromCenDists_smooth[0]
+    while (normInts_smooth[i] >= 0.9) or (np.isnan(normInts_smooth[i])):
+        thresh = fromCenDists_smooth[i]
+        i += 1
+    print(f'{arrLoc}: {thresh}')
 
     sns.scatterplot(ax=axes[idx],
                     x='FromCenDist',

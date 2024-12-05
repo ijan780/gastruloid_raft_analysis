@@ -980,31 +980,28 @@ sns.stripplot(ax=axes,
               y='PercRaft',
               data=df_sub,
               hue='Array',
-              size=12,
+              size=15,
               alpha=0.75,
               jitter=0.2,
-              palette='viridis',
+              palette='colorblind',
               legend=False,
               zorder=1)
-# axes.errorbar(x=df_sub_mean['Grade'],
-#              y=df_sub_mean['Mean'],
-#              yerr=df_sub_mean['Stdev'],
-#              fmt='none',
-#              color='black',
-#              capsize=10,
-#              capthick=1.5,
-#              marker='_',
-#              markersize=40,
-#              markeredgewidth=3,
-#              linewidth=3,
-#              zorder=2)
-# for i, row in df_sub_mean.iterrows():
-#     axes.hlines(y=row['Mean'],
-#                xmin= (i - 0.15),
-#                xmax= (i + 0.15),
-#                colors='black',
-#                linewidth=3,
-#                zorder=3)
+axes.errorbar(x=df_sub_mean['Grade'],
+              y=df_sub_mean['Mean'],
+              yerr=df_sub_mean['Stdev'],
+              fmt='none',
+              color='black',
+              capsize=10,
+              capthick=3,
+              linewidth=3,
+              zorder=2)
+for i, row in df_sub_mean.iterrows():
+    axes.hlines(y=row['Mean'],
+               xmin= (i - 0.25),
+               xmax= (i + 0.25),
+               colors='black',
+               linewidth=3,
+               zorder=3)
 
 axes.set_xlabel('')
 axes.set_xticks([0, 1, 2],
@@ -1028,12 +1025,12 @@ for grad in grads:
 
 #%%
 arrLocs_plot = arrLocs[:-1]
-sig = ['n.s.', 'n.s.', 'n.s.'] # TODO: need to change
+sig = ['n.s.', 'n.s.', 'n.s.']
 
 plt.rcdefaults()
-sns.set_theme(style='white', font_scale=1.75)
+sns.set_theme(style='white', font_scale=1.25)
 plt.rcParams['ytick.left'] = True
-fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+fig, axes = plt.subplots(1, 3, figsize=(10, 4))
 
 for idx, grad in enumerate(grads):
     df_sub = df_counts[(df_counts['Grade'] == grad) &
@@ -1048,32 +1045,30 @@ for idx, grad in enumerate(grads):
                   y='PercRaft',
                   data=df_sub,
                   hue='Array',
-                  size=20,
+                  size=15,
                   alpha=0.75,
                   jitter=0.2,
-                  palette='viridis',
+                  palette='colorblind',
                   legend=False,
                   zorder=1)
 
-    # axes[idx].errorbar(x=df_sub_mean['ArrayLoc'],
-    #                    y=df_sub_mean['Mean'],
-    #                    yerr=df_sub_mean['Stdev'],
-    #                    fmt='none',
-    #                    color='black',
-    #                    capsize=10,
-    #                    capthick=2,
-    #                    marker='_',
-    #                    markersize=40,
-    #                    markeredgewidth=2,
-    #                    linewidth=3,
-    #                    zorder=2)
-    # for i, row2 in df_sub_mean.iterrows():
-    #     axes[idx].hlines(y=row2['Mean'],
-    #                      xmin=(i - 0.2),
-    #                      xmax=(i + 0.2),
-    #                      colors='black',
-    #                      linewidth=2,
-    #                      zorder=3)
+    axes[idx].errorbar(x=df_sub_mean['ArrayLoc'],
+                       y=df_sub_mean['Mean'],
+                       yerr=df_sub_mean['Stdev'],
+                       fmt='none',
+                       color='black',
+                       capsize=10,
+                       capthick=3,
+                       marker='_',
+                       linewidth=3,
+                       zorder=2)
+    for i, row2 in df_sub_mean.iterrows():
+        axes[idx].hlines(y=row2['Mean'],
+                         xmin=(i - 0.2),
+                         xmax=(i + 0.2),
+                         colors='black',
+                         linewidth=3,
+                         zorder=3)
 
     axes[idx].set_xlabel('')
     axes[idx].set_xticks([0, 1],
@@ -1084,7 +1079,7 @@ for idx, grad in enumerate(grads):
     max_ylim = np.max(df_sub['PercRaft'])
 
     if idx != 1:
-        axes[idx].set_ylim(0, max_ylim * 1.18)
+        axes[idx].set_ylim(0, max_ylim * 1.22)
 
         axes[idx].plot([0, 0, 1, 1],
                        [max_ylim * 1.07,
@@ -1104,18 +1099,33 @@ for idx, grad in enumerate(grads):
                        ha='center',
                        va='bottom',
                        color='k',
-                       fontsize=22
+                       fontsize=16
                        )
 
 axes[1].set_ylim(0, 1)
 axes[1].yaxis.set_major_locator(plt.MaxNLocator(nbins=4))
+axes[1].plot([0, 0, 1, 1],
+             [0.075,
+              0.1,
+              0.1,
+              0.075],
+             linewidth=2,
+             color='k')
+axes[1].text((0 + 1) * 0.5,
+             0.1,
+             sig[1],
+             ha='center',
+             va='bottom',
+             color='k',
+             fontsize=16
+             )
 
 plt.tight_layout()
 plt.show()
 
 #%%
 df_diams = pd.read_csv(dataDir / 'Pattern Diameter.csv')
-arrays = [_ for _ in range(1, 3)]
+arrays = [_ for _ in range(1, 5)]
 arrLocs = ['Center', 'Edge']
 
 #%%
@@ -1141,14 +1151,31 @@ df_diams_means = pd.DataFrame({'Array': arrays_col2,
                                'Stdev': stdevs_col2})
 
 #%%
+arrLocs_col3 = []
+means_col3 = []
+stdevs_col3 = []
+
+for arrLoc in arrLocs:
+    arrLocs_col3.append(arrLoc)
+
+    df_sub = df_diams_means[df_diams_means['ArrayLoc'] == arrLoc]
+    mean = df_sub['Mean'].tolist()
+    means_col3.append(np.mean(mean))
+    stdevs_col3.append(np.std(mean))
+
+df_diams_means2 = pd.DataFrame({'ArrayLoc': arrLocs_col3,
+                               'Mean': means_col3,
+                               'Stdev': stdevs_col3})
+
+#%%
 import scipy.stats as stats
 
-df_diam_center = df_diams_means[(df_diams_means['Location'] == 'Center')]
-df_diam_edge = df_diams_means[(df_diams_means['Location'] == 'Edge')]
+df_diam_center = df_diams_means[(df_diams_means['ArrayLoc'] == 'Center')]
+df_diam_edge = df_diams_means[(df_diams_means['ArrayLoc'] == 'Edge')]
 
 ttest_diam = stats.ttest_ind(a=df_diam_center['Mean'],
-                                 b=df_diam_edge['Mean'],
-                                 equal_var=True)
+                             b=df_diam_edge['Mean'],
+                             equal_var=True)
 print(f'Pattern Diam: {ttest_diam}')
 
 #%%%
@@ -1203,12 +1230,30 @@ axes.text((0 + 1) * 0.5,
           color='k',
           fontsize=16)
 
+axes.errorbar(x=df_diams_means2['ArrayLoc'],
+              y=df_diams_means2['Mean'],
+              yerr=df_diams_means2['Stdev'],
+              fmt='none',
+              color='black',
+              capsize=10,
+              capthick=3,
+              marker='_',
+              linewidth=3,
+              zorder=2)
+for i, row2 in df_diams_means2.iterrows():
+    axes.hlines(y=row2['Mean'],
+                xmin=(i - 0.2),
+                xmax=(i + 0.2),
+                colors='black',
+                linewidth=3,
+                zorder=3)
+
 plt.tight_layout()
 plt.show()
 
 #%%
 df_fromCen = pd.read_csv(dataDir / 'Pattern From Center.csv')
-arrays = [_ for _ in range(1, 3)]
+arrays = [_ for _ in range(1, 5)]
 arrLocs = ['Center', 'Edge']
 patterns = [_ for _ in range(1,9)]
 
@@ -1266,7 +1311,7 @@ fromCenDists_smooth = df_smooth['FromCenDist'].tolist()
 normInts_smooth = df_smooth['NormInt_Smooth'].tolist()
 i = 0
 thresh = fromCenDists_smooth[0]
-while (normInts_smooth[i] >= 0.9) or (np.isnan(normInts_smooth[i])):
+while (normInts_smooth[i] >= 0.8) or (np.isnan(normInts_smooth[i])):
     thresh = fromCenDists_smooth[i]
     i += 1
 print(thresh)

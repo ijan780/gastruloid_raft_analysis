@@ -158,26 +158,23 @@ sns.swarmplot(x='Ploidy',
               edgecolor='k',
               linewidth=2,
               legend=False,
-              zorder=2)
+              zorder=3)
 axes.errorbar(x=df_means2_nucDen['Ploidy'],
              y=df_means2_nucDen['Mean'],
              yerr=df_means2_nucDen['SEM'],
              fmt='none',
              color='black',
-             capsize=10,
+             capsize=20,
              capthick=3,
-             marker='_',
-             markersize=40,
-             markeredgewidth=3,
              linewidth=3,
-             zorder=3)
+             zorder=2)
 for i, row in df_means2_nucDen.iterrows():
     axes.hlines(y=row['Mean'],
-               xmin= (i - 0.3),
-               xmax= (i + 0.3),
+               xmin= (i - 0.45),
+               xmax= (i + 0.45),
                colors='black',
                linewidth=3,
-               zorder=3)
+               zorder=2)
 
 plt.plot([0, 0, 1, 1],
          [max(df_fluors_nucDen['value'])+0.01,
@@ -235,26 +232,23 @@ sns.swarmplot(x='Ploidy',
               edgecolor='k',
               linewidth=2,
               legend=False,
-              zorder=2)
+              zorder=3)
 axes.errorbar(x=df_means2_hull['Ploidy'],
              y=df_means2_hull['Mean'],
              yerr=df_means2_hull['SEM'],
              fmt='none',
              color='black',
-             capsize=10,
+             capsize=15,
              capthick=3,
-             marker='_',
-             markersize=40,
-             markeredgewidth=3,
              linewidth=3,
-             zorder=3)
+             zorder=2)
 for i, row in df_means2_hull.iterrows():
     axes.hlines(y=row['Mean'],
-               xmin= (i - 0.3),
-               xmax= (i + 0.3),
+               xmin= (i - 0.45),
+               xmax= (i + 0.45),
                colors='black',
                linewidth=3,
-               zorder=3)
+               zorder=2)
 
 plt.plot([0, 0, 1, 1],
          [max(df_fluors_hull['value'])+1e4,

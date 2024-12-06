@@ -798,6 +798,8 @@ plt.tight_layout()
 plt.show()
 
 #%%
+import scipy.stats as stats
+
 for grad in grads:
     df_sub = df_grad_counts[df_grad_counts['Grade'] == grad]
     df_center = df_sub[df_sub['ArrayLoc'] == 'Center']
@@ -907,8 +909,8 @@ dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241126_Micro
 #%%
 arrays = [_ for _ in range(1, 5)]
 arrLocs = ['Center', 'Edge', 'Total']
-numCenRafts = (23- (2 * 2)) ** 2
-grads = ['Good', 'Missing', 'Border']
+numCenRafts = (23 - (2 * 2)) ** 2
+grads = ['Pass', 'Missing', 'Border']
 
 #%%
 df_counts = pd.read_csv(dataDir / 'Pattern Grading Count.csv')

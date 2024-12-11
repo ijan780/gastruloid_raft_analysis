@@ -907,13 +907,14 @@ import matplotlib.pyplot as plt
 dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241126_Micropattern Staining_Raft')
 
 #%%
-arrays = [_ for _ in range(1, 5)]
+arrays = [1, 2, 4]
 arrLocs = ['Center', 'Edge', 'Total']
 numCenRafts = (23 - (2 * 2)) ** 2
 grads = ['Pass', 'Missing', 'Border']
 
 #%%
 df_counts = pd.read_csv(dataDir / 'Pattern Grading Count.csv')
+df_counts = df_counts[df_counts['Array'] != 3]
 
 arrLocs_col = df_counts['ArrayLoc'].tolist()
 counts_col = df_counts['Count'].tolist()
@@ -975,26 +976,25 @@ sns.stripplot(ax=axes,
               hue='Array',
               size=15,
               alpha=0.75,
-              jitter=0.2,
               palette='colorblind',
               legend=False,
               zorder=1)
-axes.errorbar(x=df_sub_mean['Grade'],
-              y=df_sub_mean['Mean'],
-              yerr=df_sub_mean['Stdev'],
-              fmt='none',
-              color='black',
-              capsize=15,
-              capthick=3,
-              linewidth=3,
-              zorder=2)
-for i, row in df_sub_mean.iterrows():
-    axes.hlines(y=row['Mean'],
-               xmin= (i - 0.5),
-               xmax= (i + 0.5),
-               colors='black',
-               linewidth=3,
-               zorder=1)
+# axes.errorbar(x=df_sub_mean['Grade'],
+#               y=df_sub_mean['Mean'],
+#               yerr=df_sub_mean['Stdev'],
+#               fmt='none',
+#               color='black',
+#               capsize=15,
+#               capthick=3,
+#               linewidth=3,
+#               zorder=2)
+# for i, row in df_sub_mean.iterrows():
+#     axes.hlines(y=row['Mean'],
+#                xmin= (i - 0.5),
+#                xmax= (i + 0.5),
+#                colors='black',
+#                linewidth=3,
+#                zorder=1)
 
 axes.set_xlabel('')
 axes.set_xticks([0, 1, 2],
@@ -1040,28 +1040,27 @@ for idx, grad in enumerate(grads):
                   hue='Array',
                   size=15,
                   alpha=0.75,
-                  jitter=0.2,
                   palette='colorblind',
                   legend=False,
                   zorder=1)
 
-    axes[idx].errorbar(x=df_sub_mean['ArrayLoc'],
-                       y=df_sub_mean['Mean'],
-                       yerr=df_sub_mean['Stdev'],
-                       fmt='none',
-                       color='black',
-                       capsize=15,
-                       capthick=3,
-                       marker='_',
-                       linewidth=3,
-                       zorder=2)
-    for i, row2 in df_sub_mean.iterrows():
-        axes[idx].hlines(y=row2['Mean'],
-                         xmin=(i - 0.4),
-                         xmax=(i + 0.4),
-                         colors='black',
-                         linewidth=3,
-                         zorder=1)
+    # axes[idx].errorbar(x=df_sub_mean['ArrayLoc'],
+    #                    y=df_sub_mean['Mean'],
+    #                    yerr=df_sub_mean['Stdev'],
+    #                    fmt='none',
+    #                    color='black',
+    #                    capsize=15,
+    #                    capthick=3,
+    #                    marker='_',
+    #                    linewidth=3,
+    #                    zorder=2)
+    # for i, row2 in df_sub_mean.iterrows():
+    #     axes[idx].hlines(y=row2['Mean'],
+    #                      xmin=(i - 0.4),
+    #                      xmax=(i + 0.4),
+    #                      colors='black',
+    #                      linewidth=3,
+    #                      zorder=1)
 
     axes[idx].set_xlabel('')
     axes[idx].set_xticks([0, 1],
@@ -1072,7 +1071,7 @@ for idx, grad in enumerate(grads):
     max_ylim = np.max(df_sub['PercRaft'])
 
     if idx != 1:
-        axes[idx].set_ylim(0, max_ylim * 1.22)
+        axes[idx].set_ylim(0, max_ylim * 1.20)
 
         axes[idx].plot([0, 0, 1, 1],
                        [max_ylim * 1.07,
@@ -1118,7 +1117,9 @@ plt.show()
 
 #%%
 df_diams = pd.read_csv(dataDir / 'Pattern Diameter.csv')
-arrays = [_ for _ in range(1, 5)]
+df_diams = df_diams[df_diams['Array'] != 3]
+
+arrays = [1, 2, 4]
 arrLocs = ['Center', 'Edge']
 
 #%%
@@ -1230,30 +1231,32 @@ axes.text((0 + 1) * 0.5,
           color='k',
           fontsize=16)
 
-axes.errorbar(x=df_diams_means2['ArrayLoc'],
-              y=df_diams_means2['Mean'],
-              yerr=df_diams_means2['Stdev'],
-              fmt='none',
-              color='black',
-              capsize=15,
-              capthick=3,
-              marker='_',
-              linewidth=3,
-              zorder=2)
-for i, row2 in df_diams_means2.iterrows():
-    axes.hlines(y=row2['Mean'],
-                xmin=(i - 0.4),
-                xmax=(i + 0.4),
-                colors='black',
-                linewidth=3,
-                zorder=2)
+# axes.errorbar(x=df_diams_means2['ArrayLoc'],
+#               y=df_diams_means2['Mean'],
+#               yerr=df_diams_means2['Stdev'],
+#               fmt='none',
+#               color='black',
+#               capsize=15,
+#               capthick=3,
+#               marker='_',
+#               linewidth=3,
+#               zorder=2)
+# for i, row2 in df_diams_means2.iterrows():
+#     axes.hlines(y=row2['Mean'],
+#                 xmin=(i - 0.4),
+#                 xmax=(i + 0.4),
+#                 colors='black',
+#                 linewidth=3,
+#                 zorder=2)
 
 plt.tight_layout()
 plt.show()
 
 #%%
 df_fromCen = pd.read_csv(dataDir / 'Pattern From Center.csv')
-arrays = [_ for _ in range(1, 5)]
+df_fromCen = df_fromCen[df_fromCen['Array'] != 3]
+
+arrays = [1, 2, 4]
 arrLocs = ['Center', 'Edge']
 patterns = [_ for _ in range(1,9)]
 

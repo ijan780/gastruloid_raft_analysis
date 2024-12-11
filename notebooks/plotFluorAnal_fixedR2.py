@@ -171,3 +171,155 @@ axes.set_ylabel('Threshold', fontweight='bold')
 
 plt.tight_layout()
 plt.show()
+
+#%% [markdown]
+# 12wp vs raft comparison
+
+#%%
+from pathlib import Path
+import pandas as pd
+import seaborn as sns
+
+#%%
+dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241210_RUES2_12wp vs Raft')
+df_grad = pd.read_csv(dataDir / '12wp vs Raft Gastruloid Grading Count.csv')
+grads = ['Pass', 'Malformed']
+arrLocs = ['Center', 'Edge']
+
+#%%
+df_wp = df_grad[df_grad['Surface'] == '12wp']
+
+plt.rcdefaults()
+sns.set_theme(style='white', font_scale=1.25)
+plt.rcParams['ytick.left'] = True
+fig, axes = plt.subplots(1, 2, figsize=(8, 4))
+
+for idx, grad in enumerate(grads):
+    df_sub = df_wp[df_wp['Grade'] == grad]
+
+    sns.swarmplot(ax=axes[idx],
+                  x='ArrayLoc',
+                  y='PercRaft',
+                  data=df_sub,
+                  hue='Replicate',
+                  size=15,
+                  alpha=0.75,
+                  palette='colorblind',
+                  legend=False,
+                  zorder=1)
+
+    axes[idx].set_xlabel('')
+    axes[idx].set_xticks([0, 1],
+                         arrLocs,
+                         fontweight='bold')
+    axes[idx].set_xlim(-0.5, 1.5)
+    axes[idx].set_ylabel(f'% {grad}', fontweight='bold')
+    axes[idx].set_ylim(0, 115)
+
+    if grad == 'Pass':
+        axes[idx].plot([0, 0, 1, 1],
+                       [106,
+                        108,
+                        108,
+                        106],
+                       linewidth=2,
+                       color='k')
+
+        axes[idx].text((0 + 1) * 0.5,
+                       108,
+                       'n.s.',
+                       ha='center',
+                       va='bottom',
+                       color='k',
+                       fontsize=16
+                       )
+    elif grad == 'Malformed':
+        axes[idx].plot([0, 0, 1, 1],
+                       [6,
+                        8,
+                        8,
+                        6],
+                       linewidth=2,
+                       color='k')
+
+        axes[idx].text((0 + 1) * 0.5,
+                       8,
+                       'n.s.',
+                       ha='center',
+                       va='bottom',
+                       color='k',
+                       fontsize=16
+                       )
+
+plt.tight_layout()
+plt.show()
+
+#%%
+#%%
+df_wp = df_grad[df_grad['Surface'] == 'Raft']
+
+plt.rcdefaults()
+sns.set_theme(style='white', font_scale=1.25)
+plt.rcParams['ytick.left'] = True
+fig, axes = plt.subplots(1, 2, figsize=(8, 4))
+
+for idx, grad in enumerate(grads):
+    df_sub = df_wp[df_wp['Grade'] == grad]
+
+    sns.swarmplot(ax=axes[idx],
+                  x='ArrayLoc',
+                  y='PercRaft',
+                  data=df_sub,
+                  marker='s',
+                  hue='Replicate',
+                  size=15,
+                  alpha=0.75,
+                  palette='colorblind',
+                  legend=False,
+                  zorder=1)
+
+    axes[idx].set_xlabel('')
+    axes[idx].set_xticks([0, 1],
+                         arrLocs,
+                         fontweight='bold')
+    axes[idx].set_xlim(-0.5, 1.5)
+    axes[idx].set_ylabel(f'% {grad}', fontweight='bold')
+    axes[idx].set_ylim(0, 115)
+
+    if grad == 'Pass':
+        axes[idx].plot([0, 0, 1, 1],
+                       [106,
+                        108,
+                        108,
+                        106],
+                       linewidth=2,
+                       color='k')
+
+        axes[idx].text((0 + 1) * 0.5,
+                       108,
+                       'n.s.',
+                       ha='center',
+                       va='bottom',
+                       color='k',
+                       fontsize=16
+                       )
+    elif grad == 'Malformed':
+        axes[idx].plot([0, 0, 1, 1],
+                       [6,
+                        8,
+                        8,
+                        6],
+                       linewidth=2,
+                       color='k')
+
+        axes[idx].text((0 + 1) * 0.5,
+                       8,
+                       'n.s.',
+                       ha='center',
+                       va='bottom',
+                       color='k',
+                       fontsize=16
+                       )
+
+plt.tight_layout()
+plt.show()

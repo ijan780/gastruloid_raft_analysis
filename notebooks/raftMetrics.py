@@ -353,6 +353,7 @@ for arr in arrays:
             measures_edge_col.append(measure_edge)
             stdev_edge = np.std(df_sub['Measurement'].tolist())
             stdev_edge_col.append(stdev_edge)
+
 df_edges_means = pd.DataFrame({'Array': arrs_edge_col,
                                'ArrayLoc': arr_locs_edge_col,
                                'Raft': rafts_edge_col,
@@ -402,16 +403,20 @@ means_edge_col2 = []
 stdev_edge_col2 = []
 
 for arr in arrays:
-    for arr_loc in arr_locs:
+    for arr_loc in (arr_locs + ['Total']):
         arrs_edge_col2.append(arr)
         arr_locs_edge_col2.append(arr_loc)
 
-        df_sub = df_edges_means[(df_edges_means['Array'] == arr) &
-                                (df_edges_means['ArrayLoc'] == arr_loc)]
+        if arr_loc != 'Total':
+            df_sub = df_edges_means[(df_edges_means['Array'] == arr) &
+                                    (df_edges_means['ArrayLoc'] == arr_loc)]
+        else:
+            df_sub = df_edges_means[df_edges_means['Array'] == arr]
         mean = np.mean(df_sub['Measurement'].tolist())
         stdev = np.std(df_sub['Measurement'].tolist())
         means_edge_col2.append(mean)
         stdev_edge_col2.append(stdev)
+
 df_edges_means2 = pd.DataFrame({'Array': arrs_edge_col2,
                                 'ArrayLoc': arr_locs_edge_col2,
                                 'Mean': means_edge_col2,
@@ -424,19 +429,24 @@ means_thick_col2 = []
 stdev_thick_col2 = []
 
 for arr in arrays:
-    for arr_loc in arr_locs:
+    for arr_loc in (arr_locs + ['Total']):
         for raft_loc in raft_locs:
             arrs_thick_col2.append(arr)
             arr_locs_thick_col2.append(arr_loc)
             raft_locs_thick_col2.append(raft_loc)
 
-            df_sub = df_thicks_means[(df_thicks_means['Array'] == arr) &
-                                     (df_thicks_means['ArrayLoc'] == arr_loc) &
-                                     (df_thicks_means['RaftLoc'] == raft_loc)]
+            if arr_loc != 'Total':
+                df_sub = df_thicks_means[(df_thicks_means['Array'] == arr) &
+                                         (df_thicks_means['ArrayLoc'] == arr_loc) &
+                                         (df_thicks_means['RaftLoc'] == raft_loc)]
+            else:
+                df_sub = df_thicks_means[(df_thicks_means['Array'] == arr) &
+                                         (df_thicks_means['RaftLoc'] == raft_loc)]
             mean = np.mean(df_sub['Measurement'].tolist())
             stdev = np.std(df_sub['Measurement'].tolist())
             means_thick_col2.append(mean)
             stdev_thick_col2.append(stdev)
+
 df_thicks_means2 = pd.DataFrame({'Array': arrs_thick_col2,
                                  'ArrayLoc': arr_locs_thick_col2,
                                  'RaftLoc': raft_locs_thick_col2,
@@ -470,6 +480,54 @@ edge_arrEdges_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Edge') 
                                        (df_thicks_means2['RaftLoc'] == 'Edge')]['Mean']
 ttest_edge_thick = stats.ttest_ind(a=edge_arrCenters_thick, b=edge_arrEdges_thick, equal_var=True)
 print(f'Raft Edge Thickness: {ttest_edge_thick}')
+
+#%%
+arr_locs_edge_col3 = []
+means_edge_col3 = []
+stdev_edge_col3 = []
+
+for arr_loc in (arr_locs + ['Total']):
+    arr_locs_edge_col3.append(arr_loc)
+
+    df_sub = df_edges_means2[df_edges_means2['ArrayLoc'] == arr_loc]
+
+    mean = np.mean(df_sub['Mean'].tolist())
+    stdev = np.std(df_sub['Mean'].tolist())
+    means_edge_col3.append(mean)
+    stdev_edge_col3.append(stdev)
+
+df_edges_means3 = pd.DataFrame({'ArrayLoc': arr_locs_edge_col3,
+                                'Mean': means_edge_col3,
+                                'Stdev': stdev_edge_col3})
+
+arr_locs_thick_col3 = []
+raft_locs_thick_col3 = []
+means_thick_col3 = []
+stdev_thick_col3 = []
+
+for arr_loc in (arr_locs + ['Total']):
+    for raft_loc in raft_locs:
+        arr_locs_thick_col3.append(arr_loc)
+        raft_locs_thick_col3.append(raft_loc)
+
+        df_sub = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == arr_loc) &
+                                  (df_thicks_means2['RaftLoc'] == raft_loc)]
+
+        mean = np.mean(df_sub['Mean'].tolist())
+        stdev = np.std(df_sub['Mean'].tolist())
+        means_thick_col3.append(mean)
+        stdev_thick_col3.append(stdev)
+
+df_thicks_means3 = pd.DataFrame({'ArrayLoc': arr_locs_thick_col3,
+                                 'RaftLoc': raft_locs_thick_col3,
+                                 'Mean': means_thick_col3,
+                                 'Stdev': stdev_thick_col3})
+
+#%%
+df_edges_means3.to_csv((dataDir / '800x800x104um Raft Measurements_Mean_Edge_Means2.csv'),
+                      index=False)
+df_thicks_means3.to_csv((dataDir / '800x800x104um Raft Measurements_Mean_Thickness_Means2.csv'),
+                       index=False)
 
 #%%
 import seaborn as sns
@@ -1129,12 +1187,15 @@ means_col2 = []
 stdevs_col2 = []
 
 for array in arrays:
-    for arrLoc in arrLocs:
+    for arrLoc in (arrLocs + ['Total']):
         arrays_col2.append(array)
         arrLocs_col2.append(arrLoc)
 
-        df_sub = df_diams[(df_diams['Array'] == array) &
-                          (df_diams['ArrayLoc'] == arrLoc)]
+        if arrLoc != 'Total':
+            df_sub = df_diams[(df_diams['Array'] == array) &
+                              (df_diams['ArrayLoc'] == arrLoc)]
+        else:
+            df_sub = df_diams[df_diams['Array'] == array]
         diam = df_sub['Diameter'].tolist()
         means_col2.append(np.mean(diam))
         stdevs_col2.append(np.std(diam))
@@ -1150,7 +1211,7 @@ arrLocs_col3 = []
 means_col3 = []
 stdevs_col3 = []
 
-for arrLoc in arrLocs:
+for arrLoc in (arrLocs + ['Total']):
     arrLocs_col3.append(arrLoc)
 
     df_sub = df_diams_means[df_diams_means['ArrayLoc'] == arrLoc]
@@ -1332,7 +1393,14 @@ for idx, arrLoc in enumerate(arrLocs):
     while (normInts_smooth[i] >= 0.9) or (np.isnan(normInts_smooth[i])):
         thresh = fromCenDists_smooth[i]
         i += 1
-    print(f'{arrLoc}: {thresh}')
+    print(f'{arrLoc} <0.9: {thresh}')
+
+    i = 0
+    thresh = fromCenDists_smooth[0]
+    while (normInts_smooth[i] >= 0.8) or (np.isnan(normInts_smooth[i])):
+        thresh = fromCenDists_smooth[i]
+        i += 1
+    print(f'{arrLoc} <0.8: {thresh}')
 
     sns.scatterplot(ax=axes[idx],
                     x='FromCenDist',
@@ -1390,3 +1458,115 @@ plt.show()
 #
 # df_pattDiams.to_csv((dataDir / 'Pattern Diameter.csv'),
 #                     index=False)
+
+#%% [markdown]
+# Master template dimensions
+
+#%%
+from pathlib import Path
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+#%%
+dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Profilometer\210901_800umTemplate2')
+
+df_height = pd.read_csv(dataDir / '210901_800umTemplate2_Height.csv')
+df_width = pd.read_csv(dataDir / '210901_800umTemplate2_Width.csv')
+df_gap = pd.read_csv(dataDir / '210901_800umTemplate2_Gap.csv')
+df_temps = [df_height, df_width, df_gap]
+
+measures = ['Height', 'Width', 'Gap']
+temps = [_ for _ in range(1,6)]
+
+#%%
+df_means = []
+
+for idx, df in enumerate(df_temps):
+    temps_col = []
+    means_col = []
+    stdevs_col = []
+
+    for temp in temps:
+        df_sub = df[df['Template'] == temp]
+        mean = np.mean(df_sub['Measurement'].tolist())
+        stdev = np.std(df_sub['Measurement'].tolist())
+
+        temps_col.append(temp)
+        means_col.append(mean)
+        stdevs_col.append(stdev)
+
+    df_mean = pd.DataFrame({'Template': temps_col,
+                             'Mean': means_col,
+                             'Stdev': stdevs_col})
+    df_means.append(df_mean)
+    df_mean.to_csv((dataDir / f'210901_800umTemplate2_{measures[idx]}_Mean.csv'),
+                   index=False)
+
+#%%
+means2_col = []
+stdevs2_col = []
+
+for idx, df in enumerate(df_means):
+    mean2 = np.mean(df['Mean'].tolist())
+    stdev2 = np.std(df['Mean'].tolist())
+
+    means2_col.append(mean2)
+    stdevs2_col.append(stdev2)
+
+df_means2 = pd.DataFrame({'Measure': measures,
+                         'Mean': means2_col,
+                         'Stdev': stdevs2_col})
+df_means2.to_csv((dataDir / '210901_800umTemplate2_Mean2.csv'),
+                 index=False)
+
+#%%
+plt.rcdefaults()
+sns.set_theme(style='white', font_scale=1.25)
+plt.rcParams['ytick.left'] = True
+fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+
+for idx, measure in enumerate(measures):
+    df = df_temps[idx]
+    df_mean = df_means[idx]
+
+    sns.stripplot(ax=axes[idx],
+                  y='Measurement',
+                  data=df,
+                  hue='Template',
+                  size=10,
+                  alpha=0.75,
+                  jitter=0.3,
+                  palette='colorblind',
+                  legend=False,
+                  zorder=1)
+    sns.swarmplot(ax=axes[idx],
+                  y='Mean',
+                  data=df_mean,
+                  hue='Template',
+                  size=15,
+                  palette='colorblind',
+                  edgecolor='k',
+                  linewidth=2,
+                  legend=False,
+                  zorder=3)
+
+    axes[idx].errorbar(x=0,
+                       y=means2_col[idx],
+                       yerr=stdevs2_col[idx],
+                       color='black',
+                       capsize=20,
+                       capthick=3,
+                       linewidth=3,
+                       marker='_',
+                       markersize=125,
+                       markeredgewidth=3,
+                       zorder=2)
+
+    axes[idx].set_xlabel('')
+    axes[idx].set_ylabel(f'{measures[idx]} (μm)', fontweight='bold')
+    axes[idx].yaxis.set_major_locator(plt.MaxNLocator(integer=True, nbins=5))
+
+plt.tight_layout()
+plt.show()

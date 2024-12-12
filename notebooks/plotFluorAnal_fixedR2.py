@@ -255,7 +255,6 @@ plt.tight_layout()
 plt.show()
 
 #%%
-#%%
 df_wp = df_grad[df_grad['Surface'] == 'Raft']
 
 plt.rcdefaults()

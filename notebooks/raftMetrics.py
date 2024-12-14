@@ -704,9 +704,9 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-dataDirs = [Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Eu & Aneu Gastruloid Fluor Analysis')]
-# dataDirs = [Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Fixed Gastruloid Fluor Analysis'),
-#             Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Eu & Aneu Gastruloid Fluor Analysis')]
+# dataDirs = [Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Eu & Aneu Gastruloid Fluor Analysis')]
+dataDirs = [Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Fixed Gastruloid Fluor Analysis'),
+            Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Eu & Aneu Gastruloid Fluor Analysis')]
 gradPaths = []
 for dir in dataDirs:
     gradPath = [file for file in dir.iterdir() if 'RaftGrading' in file.stem]
@@ -722,6 +722,7 @@ for r in range(2, 21):
         cenRafts.append((r * 23) + (c + 1))
 
 arrs_col = []
+arrTypes_col = []
 grads_col = []
 arrLocs_col = []
 counts_col = []
@@ -731,9 +732,15 @@ for idx1, gradPath in enumerate(gradPaths):
 
     for grad in grads:
         if grad == 'Pass':
-            rafts = ([int(raft) for raft in df_grad['Pass'].tolist() if pd.notna(raft)] +
-                     [int(raft) for raft in df_grad['Fail'].tolist() if pd.notna(raft)])
-            print(idx1, len(rafts))
+            # Include lo_int rafts for only fixed arrays (Hoechst still usable)
+            if idx1 < 3:
+                rafts = ([int(raft) for raft in df_grad['Pass'].tolist() if pd.notna(raft)] +
+                         [int(raft) for raft in df_grad['Fail'].tolist() if pd.notna(raft)] +
+                         [int(raft) for raft in df_grad['Excl_lo_int'].tolist() if pd.notna(raft)])
+            else:
+                rafts = ([int(raft) for raft in df_grad['Pass'].tolist() if pd.notna(raft)] +
+                         [int(raft) for raft in df_grad['Fail'].tolist() if pd.notna(raft)])
+            print((idx1 + 1), len(rafts))
         else:
             rafts = [int(raft) for raft in df_grad[grad].tolist() if pd.notna(raft)]
 
@@ -745,6 +752,11 @@ for idx1, gradPath in enumerate(gradPaths):
                 count[1] += 1
 
         for idx2, arrLoc in enumerate(arrLocs):
+            if idx1 < 3:
+                arrTypes_col.append('Fixed')
+            else:
+                arrTypes_col.append('Live')
+
             arrs_col.append(idx1 + 1)
             grads_col.append(grad)
 
@@ -768,6 +780,7 @@ for idx, arrLoc in enumerate(arrLocs_col):
     percRafts_col.append(percRaft * 100)
 
 df_grad_counts = pd.DataFrame({'Array': arrs_col,
+                               'ArrType': arrTypes_col,
                                'Grade': grads_col,
                                'ArrayLoc': arrLocs_col,
                                'Count': counts_col,
@@ -810,7 +823,7 @@ df_grad_means.to_csv((dataDirs[0].parent / 'Raft Grading Count_Mean.csv'),
 plt.rcdefaults()
 sns.set_theme(style='white', font_scale=1.25)
 plt.rcParams['ytick.left'] = True
-fig, axes = plt.subplots(1, 1, figsize=(8, 4))
+fig, axes = plt.subplots(1, 1, figsize=(5, 4))
 
 df_sub = df_grad_counts[df_grad_counts['ArrayLoc'] == 'Total']
 df_sub.reset_index(drop=True, inplace=True)
@@ -820,10 +833,23 @@ df_sub_mean.reset_index(drop=True, inplace=True)
 sns.stripplot(ax=axes,
               x='Grade',
               y='PercRaft',
-              data=df_sub,
+              data=df_sub[df_sub['ArrType'] == 'Fixed'],
               hue='Array',
-              size=12,
+              size=10,
               alpha=0.75,
+              marker='o',
+              jitter=0.3,
+              palette='viridis',
+              legend=False,
+              zorder=1)
+sns.stripplot(ax=axes,
+              x='Grade',
+              y='PercRaft',
+              data=df_sub[df_sub['ArrType'] == 'Live'],
+              hue='Array',
+              size=10,
+              alpha=0.75,
+              marker='^',
               jitter=0.3,
               palette='viridis',
               legend=False,
@@ -833,14 +859,14 @@ axes.errorbar(x=df_sub_mean['Grade'],
              yerr=df_sub_mean['Stdev'],
              fmt='none',
              color='black',
-             capsize=15,
+             capsize=10,
              capthick=3,
              linewidth=3,
              zorder=2)
 for i, row in df_sub_mean.iterrows():
     axes.hlines(y=row['Mean'],
-               xmin= (i - 0.3),
-               xmax= (i + 0.3),
+               xmin= (i - 0.4),
+               xmax= (i + 0.4),
                colors='black',
                linewidth=3,
                zorder=3)
@@ -869,7 +895,7 @@ for grad in grads:
 
 #%%
 arrLocs_plot = arrLocs[:-1]
-sig = ['*', '*', 'n.s.', 'n.s.']
+sig = ['n.s.', 'n.s.', 'n.s.', 'n.s.']
 
 plt.rcdefaults()
 sns.set_theme(style='white', font_scale=1.25)
@@ -890,10 +916,23 @@ for idx, grad in enumerate(grads):
     sns.stripplot(ax=axes[row, col],
                   x='ArrayLoc',
                   y='PercRaft',
-                  data=df_sub,
+                  data=df_sub[df_sub['ArrType'] == 'Fixed'],
                   hue='Array',
                   size=10,
                   alpha=0.75,
+                  marker='o',
+                  jitter=0.3,
+                  palette='viridis',
+                  legend=False,
+                  zorder=1)
+    sns.stripplot(ax=axes[row, col],
+                  x='ArrayLoc',
+                  y='PercRaft',
+                  data=df_sub[df_sub['ArrType'] == 'Live'],
+                  hue='Array',
+                  size=10,
+                  alpha=0.75,
+                  marker='^',
                   jitter=0.3,
                   palette='viridis',
                   legend=False,
@@ -965,14 +1004,13 @@ import matplotlib.pyplot as plt
 dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241126_Micropattern Staining_Raft')
 
 #%%
-arrays = [1, 2, 4]
+arrays = [_ for _ in range(1, 4)]
 arrLocs = ['Center', 'Edge', 'Total']
 numCenRafts = (23 - (2 * 2)) ** 2
 grads = ['Pass', 'Missing', 'Border']
 
 #%%
 df_counts = pd.read_csv(dataDir / 'Pattern Grading Count.csv')
-df_counts = df_counts[df_counts['Array'] != 3]
 
 arrLocs_col = df_counts['ArrayLoc'].tolist()
 counts_col = df_counts['Count'].tolist()
@@ -1027,13 +1065,12 @@ df_sub.reset_index(drop=True, inplace=True)
 df_sub_mean = df_counts_means[df_counts_means['ArrayLoc'] == 'Total']
 df_sub_mean.reset_index(drop=True, inplace=True)
 
-sns.stripplot(ax=axes,
+sns.swarmplot(ax=axes,
               x='Grade',
               y='PercRaft',
               data=df_sub,
               hue='Array',
               size=15,
-              alpha=0.75,
               palette='colorblind',
               legend=False,
               zorder=1)
@@ -1076,7 +1113,7 @@ for grad in grads:
 
 #%%
 arrLocs_plot = arrLocs[:-1]
-sig = ['n.s.', 'n.s.', 'n.s.']
+sig = ['***', 'n.s.', '***']
 
 plt.rcdefaults()
 sns.set_theme(style='white', font_scale=1.25)
@@ -1091,13 +1128,12 @@ for idx, grad in enumerate(grads):
                                   (df_counts_means['ArrayLoc'] != 'Total')]
     df_sub_mean.reset_index(drop=True, inplace=True)
 
-    sns.stripplot(ax=axes[idx],
+    sns.swarmplot(ax=axes[idx],
                   x='ArrayLoc',
                   y='PercRaft',
                   data=df_sub,
                   hue='Array',
                   size=15,
-                  alpha=0.75,
                   palette='colorblind',
                   legend=False,
                   zorder=1)
@@ -1109,7 +1145,6 @@ for idx, grad in enumerate(grads):
     #                    color='black',
     #                    capsize=15,
     #                    capthick=3,
-    #                    marker='_',
     #                    linewidth=3,
     #                    zorder=2)
     # for i, row2 in df_sub_mean.iterrows():
@@ -1141,7 +1176,7 @@ for idx, grad in enumerate(grads):
         if sig[idx] == 'n.s.':
             height_factor = 1.1
         else:
-            height_factor = 1.06
+            height_factor = 1.07
 
         axes[idx].text((0 + 1) * 0.5,
                        max_ylim * height_factor,
@@ -1175,9 +1210,8 @@ plt.show()
 
 #%%
 df_diams = pd.read_csv(dataDir / 'Pattern Diameter.csv')
-df_diams = df_diams[df_diams['Array'] != 3]
 
-arrays = [1, 2, 4]
+arrays = [_ for _ in range(1,4)]
 arrLocs = ['Center', 'Edge']
 
 #%%
@@ -1315,9 +1349,8 @@ plt.show()
 
 #%%
 df_fromCen = pd.read_csv(dataDir / 'Pattern From Center.csv')
-df_fromCen = df_fromCen[df_fromCen['Array'] != 3]
 
-arrays = [1, 2, 4]
+arrays = [_ for _ in range(1, 4)]
 arrLocs = ['Center', 'Edge']
 patterns = [_ for _ in range(1,9)]
 

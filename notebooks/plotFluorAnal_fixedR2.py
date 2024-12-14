@@ -84,6 +84,31 @@ df_fluor_means.to_csv((dataDir.parent / 'FluorAnalysis_Fixed_Means.csv'),
                 index=False)
 
 #%%
+var_names_col3 = []
+means_col3 = []
+sems_col3 = []
+
+for var_name in var_names:
+    for ft in var_name:
+        var_names_col3.append(ft)
+
+        df_sub = df_fluor_means[df_fluor_means['Feat'] == ft]
+        mean = np.mean(df_sub['Mean'])
+        stdev = np.std(df_sub['Mean'])
+        sem = stdev / np.sqrt(df_sub.shape[0])
+
+        means_col3.append(mean)
+        sems_col3.append(sem)
+
+df_fluor_means2 = pd.DataFrame({'Feat': var_names_col3,
+                                'Mean': means_col3,
+                                'SEM': sems_col3})
+
+#%%
+df_fluor_means2.to_csv((dataDir.parent / 'FluorAnalysis_Fixed_Means2.csv'),
+                      index=False)
+
+#%%
 var_names_plot = var_names[1:]
 
 plt.rcdefaults()

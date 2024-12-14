@@ -17,6 +17,7 @@ arrays = [_ for _ in range(1, 7)]
 ploids= ['EU', 'AN']
 ploid_labs = ['Euploid', 'Aneuploid']
 pxSize = 1.3163  # um/px
+fts = ['NucDen', 'FArea_Hull', 'Eccen', 'Radius']
 
 df_fluors = pd.DataFrame()
 
@@ -32,8 +33,7 @@ for array in arrays:
                                          for fArea in df_fluor_filter['FArea_Hull'].tolist()]
 
         df_fluor_melt = df_fluor_filter.melt(id_vars=['Array', 'Ploidy', 'Raft'],
-                                         value_vars=['NucDen', 'FArea_Hull']
-                                         )
+                                         value_vars=fts)
 
         df_fluors = pd.concat([df_fluors, df_fluor_melt],
                                axis=0,
@@ -49,7 +49,7 @@ stdevs_col2 = []
 
 for array in arrays:
     for ploid in ploid_labs:
-        for ft in ['NucDen', 'FArea_Hull']:
+        for ft in fts:
             df_sub = df_fluors[(df_fluors['Array'] == array) &
                                (df_fluors['Ploidy'] == ploid) &
                                (df_fluors['variable'] == ft)]
@@ -93,7 +93,7 @@ means_col3 = []
 sems_col3 = []
 
 for idx, ploid in enumerate(ploid_labs):
-    for ft in ['NucDen', 'FArea_Hull']:
+    for ft in fts:
         df_means_ploid = df_means_list[idx]
         df_means_ft = df_means_ploid[df_means_ploid['Feat'] == ft]
 
@@ -273,6 +273,79 @@ axes.set_ylabel(r'Fluorescence Area ($\mathregular{10^5}$ $\mathregular{μm^2}$)
 axes.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 axes.yaxis.get_offset_text().set_visible(False)
 axes.set_ylim(min(df_fluors_hull['value']) * 0.85, max(df_fluors_hull['value']) * 1.12)
+
+plt.tight_layout()
+plt.show()
+
+#%%
+fts_plot = ['Fluorescence Area', 'Eccentricity', 'Radius']
+
+#%%
+plt.rcdefaults()
+sns.set_theme(style='white', font_scale=1.0)
+plt.rcParams['ytick.left'] = True
+fig, axes = plt.subplots(2, 2, figsize=(6, 6), sharex=True)
+
+for idx, ft in enumerate(fts[1:]):
+    if idx == 0:
+        row, col = 0, 0
+    elif idx == 1:
+        row, col = 1, 0
+    elif idx == 2:
+        row, col = 1, 1
+
+    df_sub = df_fluors[(df_fluors['Ploidy'] == 'Euploid') &
+                       (df_fluors['variable'] == ft)]
+    df_sub_mean = df_means_eu[df_means_eu['Feat'] == ft]
+
+    sns.stripplot(ax=axes[row, col],
+                  y='value',
+                  data=df_sub,
+                  hue='Array',
+                  size=3,
+                  alpha=0.5,
+                  palette='colorblind',
+                  jitter=0.45,
+                  legend=False,
+                  zorder=1)
+    sns.swarmplot(ax=axes[row, col],
+                  y='Mean',
+                  data=df_sub_mean,
+                  hue='Array',
+                  size=15,
+                  palette='colorblind',
+                  edgecolor='k',
+                  linewidth=2,
+                  legend=False,
+                  zorder=3)
+
+    axes[row, col].errorbar(x=0,
+                            y=df_means2[(df_means2['Ploidy'] == 'Euploid') &
+                                        (df_means2['Feat'] == ft)]['Mean'],
+                            yerr=df_means2[(df_means2['Ploidy'] == 'Euploid') &
+                                        (df_means2['Feat'] == ft)]['SEM'],
+                            color='black',
+                            capsize=20,
+                            capthick=3,
+                            linewidth=3,
+                            marker='_',
+                            markersize=125,
+                            markeredgewidth=3,
+                            zorder=2)
+
+    axes[row, col].set_xlabel('')
+    axes[row, col].set_xticks('')
+
+axes[0, 0].set_ylabel(r'Fluorescence Area ($\mathregular{10^5}$ $\mathregular{μm^2}$)',
+                      fontweight='bold')
+axes[0, 0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+axes[0, 0].yaxis.get_offset_text().set_visible(False)
+
+axes[1, 0].set_ylabel('Eccentricity', fontweight='bold')
+
+axes[1, 1].set_ylabel('Radius (μm)', fontweight='bold')
+
+axes[0,1].remove()
 
 plt.tight_layout()
 plt.show()

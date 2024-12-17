@@ -31,6 +31,8 @@ for array in arrays:
         df_fluor_filter['Ploidy'] = [ploid_labs[idx]] * df_fluor_filter.shape[0]
         df_fluor_filter['FArea_Hull'] = [(fArea * pxSize**2)
                                          for fArea in df_fluor_filter['FArea_Hull'].tolist()]
+        df_fluor_filter['Radius'] = [(rad * pxSize)
+                                     for rad in df_fluor_filter['Radius'].tolist()]
 
         df_fluor_melt = df_fluor_filter.melt(id_vars=['Array', 'Ploidy', 'Raft'],
                                          value_vars=fts)
@@ -97,7 +99,7 @@ for idx, ploid in enumerate(ploid_labs):
         df_means_ploid = df_means_list[idx]
         df_means_ft = df_means_ploid[df_means_ploid['Feat'] == ft]
 
-        print(df_means_ft['Mean'].tolist())
+        # print(df_means_ft['Mean'].tolist())
         mean = np.mean(df_means_ft['Mean'].tolist())
         sem = np.std(df_means_ft['Mean'].tolist()) / np.sqrt(len(df_means_ft['Mean'].tolist()))
 
@@ -121,9 +123,9 @@ df_means2 = pd.DataFrame({'Ploidy': ploids_col3,
                           'SEM': sems_col3})
 
 #%%
-df_means.to_csv((dataDir.parent / 'Eu & Aneu Gastruloid Nuclei Density_Mean.csv'),
+df_means.to_csv((dataDir.parent / 'Eu & Aneu Gastruloid Fluor Analysis_Mean.csv'),
                 index=False)
-df_means2.to_csv((dataDir.parent / 'Eu & Aneu Gastruloid Nuclei Density_Mean2.csv'),
+df_means2.to_csv((dataDir.parent / 'Eu & Aneu Gastruloid Fluor Analysis_Mean2.csv'),
                 index=False)
 
 #%%

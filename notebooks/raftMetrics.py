@@ -1001,7 +1001,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 #%%
-dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241126_Micropattern Staining_Raft')
+dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241213_Array1-5_Micropattern Analysis')
 
 #%%
 arrays = [_ for _ in range(1, 4)]
@@ -1041,6 +1041,7 @@ for grad in grads:
                            (df_counts['ArrayLoc'] == arrLoc)]
         mean = np.mean(df_sub['PercRaft'])
         stdev = np.std(df_sub['PercRaft'])
+        print(grad, arrLoc, df_sub['PercRaft'].tolist(), mean, stdev)
 
         means_col2.append(mean)
         stdevs_col2.append(stdev)

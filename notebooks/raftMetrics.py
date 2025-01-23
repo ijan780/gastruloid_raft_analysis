@@ -1041,7 +1041,7 @@ for grad in grads:
                            (df_counts['ArrayLoc'] == arrLoc)]
         mean = np.mean(df_sub['PercRaft'])
         stdev = np.std(df_sub['PercRaft'])
-        print(grad, arrLoc, df_sub['PercRaft'].tolist(), mean, stdev)
+        # print(grad, arrLoc, df_sub['PercRaft'].tolist(), mean, stdev)
 
         means_col2.append(mean)
         stdevs_col2.append(stdev)

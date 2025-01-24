@@ -8,7 +8,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 #%%
-dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Fixed Gastruloid Fluor Analysis')
+dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1\Data\Fixed Gastruloid Fluor Analysis')
 os.chdir(dataDir)
 arrays = [_ for _ in range(1, 4)]
 pxSize = 1.3163  # um/px
@@ -86,7 +86,7 @@ df_fluor_means.to_csv((dataDir.parent / 'FluorAnalysis_Fixed_Means.csv'),
 #%%
 var_names_col3 = []
 means_col3 = []
-sems_col3 = []
+stdev_col3 = []
 
 for var_name in var_names:
     for ft in var_name:
@@ -95,14 +95,14 @@ for var_name in var_names:
         df_sub = df_fluor_means[df_fluor_means['Feat'] == ft]
         mean = np.mean(df_sub['Mean'])
         stdev = np.std(df_sub['Mean'])
-        sem = stdev / np.sqrt(df_sub.shape[0])
+        # sem = stdev / np.sqrt(df_sub.shape[0])
 
         means_col3.append(mean)
-        sems_col3.append(sem)
+        stdev_col3.append(stdev)
 
 df_fluor_means2 = pd.DataFrame({'Feat': var_names_col3,
                                 'Mean': means_col3,
-                                'SEM': sems_col3})
+                                'Stdev': stdev_col3})
 
 #%%
 df_fluor_means2.to_csv((dataDir.parent / 'FluorAnalysis_Fixed_Means2.csv'),

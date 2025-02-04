@@ -356,10 +356,9 @@ plt.tight_layout()
 plt.show()
 
 #%%
-nucPaths = [Path(r'C:\Users\MVX\Documents\2 - Data\Analysis\240605_RUES2_1.8e6_48hrBMP4_0&100%aneu_5_Analysis'),
-            Path(r'C:\Users\MVX\Documents\2 - Data\Analysis\240612_RUES2_1.8e6_48hrBMP4_0&100%aneu_6_Analysis'),
-            Path(r'C:\Users\MVX\Documents\2 - Data\Analysis\240619_RUES2_1.8e6_48hrBMP4_0&100%aneu_7_Analysis'),
-           ]
+nucDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1\Data\Eu & Aneu Gastruloid Fluor Analysis')
+arrays = [4, 5, 6]
+
 rafts_eu = [
     [484, 284, 75],
     [466, 480, 433],
@@ -371,22 +370,26 @@ rafts_an = [
     [40, 125, 154]
 ]
 
-nucDens = []
+normDNAs = []
 for samp in df_final['Samp_Name'].tolist():
     a = samp[0]
     p = samp[2:4]
     n = samp[-1]
 
+    file_name = nucDir / f'{p.upper()}_array{arrays[int(a) - 1]}_FluorAnalysis_CalcHoechst_Raw.csv'
+    df_fluor = pd.read_csv(file_name)
 
     if p == 'Eu':
-        df_fluor = pd.read_csv(nucPaths[int(a) - 1] / 'array1_FluorAnalysis_CalcHoechst.csv')
         raft = rafts_eu[int(a) - 1][int(n) - 1]
     elif p == 'An':
-        df_fluor = pd.read_csv(nucPaths[int(a) - 1] / 'array2_FluorAnalysis_CalcHoechst.csv')
         raft = rafts_an[int(a) - 1][int(n) - 1]
-    nucDen = df_fluor[df_fluor['Raft']==raft]['NucDen'].item()
-    nucDens.append(nucDen)
-df_final['NucDen'] = nucDens
+
+    normDNA = df_fluor[df_fluor['Raft'] == raft]['NormDNA'].item()
+
+    # print(file_name, raft, normDNA)
+
+    normDNAs.append(normDNA)
+df_final['NormDNA'] = normDNAs
 
 #%%
 df_final.to_csv((dataDir / '2024_06_20_NOG&KRT7_RelExp.csv'),
@@ -401,7 +404,7 @@ fig, axes = plt.subplots(1, 2, figsize=(8, 4))
 size = 200
 data_nog = df_final[(df_final['Target']=='NOG')]
 sns.scatterplot(ax=axes[0],
-                x='NucDen',
+                x='NormDNA',
                 y='2^-ddCT',
                 data=data_nog[data_nog['Ploid']=='Eu'],
                 marker='o',
@@ -410,7 +413,7 @@ sns.scatterplot(ax=axes[0],
                 palette='colorblind',
                 legend=False)
 sns.scatterplot(ax=axes[0],
-                x='NucDen',
+                x='NormDNA',
                 y='2^-ddCT',
                 data=data_nog[data_nog['Ploid']=='An'],
                 marker='^',
@@ -418,17 +421,17 @@ sns.scatterplot(ax=axes[0],
                 hue='Arr',
                 palette='colorblind',
                 legend=False)
-m, b = np.polyfit(data_nog['NucDen'], data_nog['2^-ddCT'], 1)
+m, b = np.polyfit(data_nog['NormDNA'], data_nog['2^-ddCT'], 1)
 # X_plot = np.linspace(axes[0].get_xlim()[0],axes[0].get_xlim()[1],100)
 X_plot = np.linspace(0,1,100)
 axes[0].plot(X_plot, m*X_plot + b, '--', color='orchid', linewidth=2)
-axes[0].set_xlabel('Nuclei Density', fontweight='bold')
+axes[0].set_xlabel('Normalized DNA Content', fontweight='bold')
 axes[0].set_ylabel('NOG Relative Expression', fontweight='bold')
 axes[0].set_xlim(0.2,1)
 
 data_krt = df_final[(df_final['Target']=='KRT7')]
 sns.scatterplot(ax=axes[1],
-                x='NucDen',
+                x='NormDNA',
                 y='2^-ddCT',
                 data=data_krt[data_krt['Ploid']=='Eu'],
                 marker='o',
@@ -436,24 +439,24 @@ sns.scatterplot(ax=axes[1],
                 hue='Arr',
                 legend=False)
 sns.scatterplot(ax=axes[1],
-                x='NucDen',
+                x='NormDNA',
                 y='2^-ddCT',
                 data=data_krt[data_krt['Ploid']=='An'],
                 marker='^',
                 s=size,
                 hue='Arr',
                 legend=False)
-m, b = np.polyfit(data_krt['NucDen'], data_krt['2^-ddCT'], 1)
+m, b = np.polyfit(data_krt['NormDNA'], data_krt['2^-ddCT'], 1)
 # X_plot = np.linspace(axes[0].get_xlim()[0],axes[0].get_xlim()[1],100)
 X_plot = np.linspace(0,1,100)
 axes[1].plot(X_plot, m*X_plot + b, '--', color='orchid', linewidth=2)
-axes[1].set_xlabel('Nuclei Density', fontweight='bold')
+axes[1].set_xlabel('Normalized DNA Content', fontweight='bold')
 axes[1].set_ylabel('KRT7 Relative Expression', fontweight='bold')
 axes[1].set_xlim(0.2,1)
 
-pearson_nog = stats.pearsonr(df_final[df_final['Target']=='NOG']['NucDen'],
+pearson_nog = stats.pearsonr(df_final[df_final['Target']=='NOG']['NormDNA'],
                              df_final[df_final['Target']=='NOG']['2^-ddCT'])
-pearson_krt = stats.pearsonr(df_final[df_final['Target']=='KRT7']['NucDen'],
+pearson_krt = stats.pearsonr(df_final[df_final['Target']=='KRT7']['NormDNA'],
                              df_final[df_final['Target']=='KRT7']['2^-ddCT'])
 
 print(f'NOG: {pearson_nog}')

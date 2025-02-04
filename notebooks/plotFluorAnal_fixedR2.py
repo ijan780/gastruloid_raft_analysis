@@ -11,10 +11,19 @@ import matplotlib.pyplot as plt
 dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1\Data\Fixed Gastruloid Fluor Analysis')
 os.chdir(dataDir)
 arrays = [_ for _ in range(1, 4)]
-pxSize = 1.3163  # um/px
-
 chs = ['Blue', 'Green', 'Red', 'FarRed']
-fts = ['ThreshVal', 'FArea', 'Dens', 'Eccen', 'Radius']
+
+#%%
+for array in arrays:
+    file_name = f'array{array}_FluorAnalysis_Fixed.csv'
+    df_fluor = pd.read_csv(file_name)
+    for ch in chs:
+        df_fluor.rename(columns={f'Dens_{ch}': f'NormFArea_{ch}'}, inplace=True)
+    df_fluor.to_csv(file_name, index=False)
+
+#%%
+pxSize = 1.3163  # um/px
+fts = ['ThreshVal', 'FArea', 'NormFArea', 'Eccen', 'Radius']
 
 total_fts = []
 for ch in chs:
@@ -150,7 +159,7 @@ axes[0, 0].set_ylabel(r'Fluorescence Area ($\mathregular{10^5}$ $\mathregular{μ
 axes[0, 0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 axes[0, 0].yaxis.get_offset_text().set_visible(False)
 
-axes[0, 1].set_ylabel('Density', fontweight='bold')
+axes[0, 1].set_ylabel('Normalized Fluorescence Area', fontweight='bold')
 
 axes[1, 0].set_ylabel('Eccentricity', fontweight='bold')
 

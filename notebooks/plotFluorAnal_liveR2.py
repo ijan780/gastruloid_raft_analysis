@@ -10,14 +10,25 @@ import matplotlib.pyplot as plt
 import scipy.stats as stats
 
 #%%
-dataDir =  Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Eu & Aneu Gastruloid Fluor Analysis')
+dataDir =  Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1\Data\Eu & Aneu Gastruloid Fluor Analysis')
 os.chdir(dataDir)
 
 arrays = [_ for _ in range(1, 7)]
 ploids= ['EU', 'AN']
+
+#%%
+for array in arrays:
+    for ploid in ploids:
+        file_name = f'{ploid}_array{array}_FluorAnalysis_CalcHoechst_Raw.csv'
+        df_fluor = pd.read_csv(file_name)
+        df_fluor.rename(columns={f'FArea_Nuc': f'FArea_DNA'}, inplace=True)
+        df_fluor.rename(columns={f'NucDen': f'NormDNA'}, inplace=True)
+        df_fluor.to_csv(file_name, index=False)
+
+#%%
 ploid_labs = ['Euploid', 'Aneuploid']
 pxSize = 1.3163  # um/px
-fts = ['NucDen', 'FArea_Hull', 'Eccen', 'Radius']
+fts = ['NormDNA', 'FArea_Hull', 'Eccen', 'Radius']
 
 df_fluors = pd.DataFrame()
 
@@ -78,8 +89,8 @@ df_means_eu = df_means[df_means['Ploidy'] == 'Euploid']
 df_means_an = df_means[df_means['Ploidy'] == 'Aneuploid']
 df_means_list = [df_means_eu, df_means_an]
 
-ttest_nucDen = stats.ttest_ind(a=df_means_eu[df_means_eu['Feat'] == 'NucDen']['Mean'],
-                               b=df_means_an[df_means_an['Feat'] == 'NucDen']['Mean'],
+ttest_nucDen = stats.ttest_ind(a=df_means_eu[df_means_eu['Feat'] == 'NormDNA']['Mean'],
+                               b=df_means_an[df_means_an['Feat'] == 'NormDNA']['Mean'],
                                equal_var=True)
 print(f'NucDen: {ttest_nucDen}')
 
@@ -129,11 +140,11 @@ df_means2.to_csv((dataDir.parent / 'Eu & Aneu Gastruloid Fluor Analysis_Mean2.cs
                 index=False)
 
 #%%
-df_fluors_nucDen = df_fluors[df_fluors['variable'] == 'NucDen']
+df_fluors_nucDen = df_fluors[df_fluors['variable'] == 'NormDNA']
 df_fluors_nucDen.reset_index(drop=True, inplace=True)
-df_means_nucDen = df_means[df_means['Feat'] == 'NucDen']
+df_means_nucDen = df_means[df_means['Feat'] == 'NormDNA']
 df_means_nucDen.reset_index(drop=True, inplace=True)
-df_means2_nucDen = df_means2[df_means2['Feat'] == 'NucDen']
+df_means2_nucDen = df_means2[df_means2['Feat'] == 'NormDNA']
 df_means2_nucDen.reset_index(drop=True, inplace=True)
 
 plt.rcdefaults()
@@ -196,7 +207,7 @@ plt.text((0+1)*.5,
 axes.set_xlabel('')
 axes.set_xticks([0, 1], ploid_labs, fontweight='bold')
 axes.set_xlim(-0.5, 1.5)
-axes.set_ylabel('Nuclei Density', fontweight='bold')
+axes.set_ylabel('Normalized DNA Content', fontweight='bold')
 axes.set_ylim(-0.01, 1.06)
 
 plt.tight_layout()

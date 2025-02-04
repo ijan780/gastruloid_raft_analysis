@@ -1,4 +1,508 @@
 #%% [markdown]
+# Raft dimensions analysis.
+
+#%%
+from pathlib import Path
+import pandas as pd
+import numpy as np
+
+dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241106_800x800x100um Raft')
+df_edges = pd.read_csv(dataDir / r'800x800x100um Raft Measurements_Raw_Edge.csv')
+df_thicks = pd.read_csv(dataDir / r'800x800x100um Raft Measurements_Raw_Thickness.csv')
+
+arrays = [_ for _ in range(1,4)]
+arr_locs = ['Center', 'Edge']
+raft_locs = ['Center', 'Edge']
+rafts = [_ for _ in range(1,6)]
+
+arrs_edge_col = []
+arr_locs_edge_col = []
+rafts_edge_col = []
+measures_edge_col = []
+stdev_edge_col = []
+
+for arr in arrays:
+    for arr_loc in arr_locs:
+        for raft in rafts:
+            arrs_edge_col.append(arr)
+            arr_locs_edge_col.append(arr_loc)
+            rafts_edge_col.append(raft)
+
+            df_sub = df_edges[(df_edges['Array'] == arr) &
+                              (df_edges['ArrayLoc'] == arr_loc) &
+                              (df_edges['Raft'] == raft)]
+            measure_edge = np.mean(df_sub['Measurement'].tolist())
+            measures_edge_col.append(measure_edge)
+            stdev_edge = np.std(df_sub['Measurement'].tolist())
+            stdev_edge_col.append(stdev_edge)
+
+df_edges_means = pd.DataFrame({'Array': arrs_edge_col,
+                               'ArrayLoc': arr_locs_edge_col,
+                               'Raft': rafts_edge_col,
+                               'Measurement': measures_edge_col,
+                               'Stdev': stdev_edge_col})
+
+arrs_thick_col = []
+arr_locs_thick_col = []
+rafts_thick_col = []
+raft_locs_thick_col = []
+measures_thick_col = []
+stdev_thick_col = []
+for arr in arrays:
+    for arr_loc in arr_locs:
+        for raft in rafts:
+            for raft_loc in raft_locs:
+                arrs_thick_col.append(arr)
+                arr_locs_thick_col.append(arr_loc)
+                rafts_thick_col.append(raft)
+                raft_locs_thick_col.append(raft_loc)
+
+                df_sub = df_thicks[(df_thicks['Array'] == arr) &
+                                   (df_thicks['ArrayLoc'] == arr_loc) &
+                                   (df_thicks['Raft'] == raft) &
+                                   (df_thicks['RaftLoc'] == raft_loc)]
+                measure_thick = np.mean(df_sub['Measurement'].tolist())
+                measures_thick_col.append(measure_thick)
+                stdev_thick = np.std(df_sub['Measurement'].tolist())
+                stdev_thick_col.append(stdev_thick)
+df_thicks_means = pd.DataFrame({'Array': arrs_thick_col,
+                                'ArrayLoc': arr_locs_thick_col,
+                                'Raft': rafts_thick_col,
+                                'RaftLoc': raft_locs_thick_col,
+                                'Measurement': measures_thick_col,
+                                'Stdev': stdev_thick_col})
+
+#%%
+df_edges_means.to_csv((dataDir / '800x800x100um Raft Measurements_Mean_Edge.csv'),
+                      index=False)
+df_thicks_means.to_csv((dataDir / '800x800x100um Raft Measurements_Mean_Thickness.csv'),
+                       index=False)
+
+#%%
+arrs_edge_col2 = []
+arr_locs_edge_col2 = []
+means_edge_col2 = []
+stdev_edge_col2 = []
+
+for arr in arrays:
+    for arr_loc in (arr_locs + ['Total']):
+        arrs_edge_col2.append(arr)
+        arr_locs_edge_col2.append(arr_loc)
+
+        if arr_loc != 'Total':
+            df_sub = df_edges_means[(df_edges_means['Array'] == arr) &
+                                    (df_edges_means['ArrayLoc'] == arr_loc)]
+        else:
+            df_sub = df_edges_means[df_edges_means['Array'] == arr]
+        mean = np.mean(df_sub['Measurement'].tolist())
+        stdev = np.std(df_sub['Measurement'].tolist())
+        means_edge_col2.append(mean)
+        stdev_edge_col2.append(stdev)
+
+df_edges_means2 = pd.DataFrame({'Array': arrs_edge_col2,
+                                'ArrayLoc': arr_locs_edge_col2,
+                                'Mean': means_edge_col2,
+                                'Stdev': stdev_edge_col2})
+
+arrs_thick_col2 = []
+arr_locs_thick_col2 = []
+raft_locs_thick_col2 = []
+means_thick_col2 = []
+stdev_thick_col2 = []
+
+for arr in arrays:
+    for arr_loc in (arr_locs + ['Total']):
+        for raft_loc in raft_locs:
+            arrs_thick_col2.append(arr)
+            arr_locs_thick_col2.append(arr_loc)
+            raft_locs_thick_col2.append(raft_loc)
+
+            if arr_loc != 'Total':
+                df_sub = df_thicks_means[(df_thicks_means['Array'] == arr) &
+                                         (df_thicks_means['ArrayLoc'] == arr_loc) &
+                                         (df_thicks_means['RaftLoc'] == raft_loc)]
+            else:
+                df_sub = df_thicks_means[(df_thicks_means['Array'] == arr) &
+                                         (df_thicks_means['RaftLoc'] == raft_loc)]
+            mean = np.mean(df_sub['Measurement'].tolist())
+            stdev = np.std(df_sub['Measurement'].tolist())
+            means_thick_col2.append(mean)
+            stdev_thick_col2.append(stdev)
+
+df_thicks_means2 = pd.DataFrame({'Array': arrs_thick_col2,
+                                 'ArrayLoc': arr_locs_thick_col2,
+                                 'RaftLoc': raft_locs_thick_col2,
+                                 'Mean': means_thick_col2,
+                                 'Stdev': stdev_thick_col2})
+
+#%%
+df_edges_means2.to_csv((dataDir / '800x800x100um Raft Measurements_Mean_Edge_Means.csv'),
+                      index=False)
+df_thicks_means2.to_csv((dataDir / '800x800x100um Raft Measurements_Mean_Thickness_Means.csv'),
+                       index=False)
+
+#%%
+import scipy.stats as stats
+
+arrCenters_edge = df_edges_means2[df_edges_means2['ArrayLoc'] == 'Center']['Mean']
+arrEdges_edge = df_edges_means2[df_edges_means2['ArrayLoc'] == 'Edge']['Mean']
+ttest_edge = stats.ttest_ind(a=arrCenters_edge, b=arrEdges_edge, equal_var=True)
+print(f'Raft Edges: {ttest_edge}')
+
+center_arrCenters_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Center') &
+                                           (df_thicks_means2['RaftLoc'] == 'Center')]['Mean']
+center_arrEdges_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Edge') &
+                                         (df_thicks_means2['RaftLoc'] == 'Center')]['Mean']
+ttest_center_thick = stats.ttest_ind(a=center_arrCenters_thick, b=center_arrEdges_thick, equal_var=True)
+print(f'Raft Center Thickness: {ttest_center_thick}')
+
+edge_arrCenters_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Center') &
+                                         (df_thicks_means2['RaftLoc'] == 'Edge')]['Mean']
+edge_arrEdges_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Edge') &
+                                       (df_thicks_means2['RaftLoc'] == 'Edge')]['Mean']
+ttest_edge_thick = stats.ttest_ind(a=edge_arrCenters_thick, b=edge_arrEdges_thick, equal_var=True)
+print(f'Raft Edge Thickness: {ttest_edge_thick}')
+
+#%%
+arr_locs_edge_col3 = []
+means_edge_col3 = []
+stdev_edge_col3 = []
+
+for arr_loc in (arr_locs + ['Total']):
+    arr_locs_edge_col3.append(arr_loc)
+
+    df_sub = df_edges_means2[df_edges_means2['ArrayLoc'] == arr_loc]
+
+    mean = np.mean(df_sub['Mean'].tolist())
+    stdev = np.std(df_sub['Mean'].tolist())
+    means_edge_col3.append(mean)
+    stdev_edge_col3.append(stdev)
+
+df_edges_means3 = pd.DataFrame({'ArrayLoc': arr_locs_edge_col3,
+                                'Mean': means_edge_col3,
+                                'Stdev': stdev_edge_col3})
+
+arr_locs_thick_col3 = []
+raft_locs_thick_col3 = []
+means_thick_col3 = []
+stdev_thick_col3 = []
+
+for arr_loc in (arr_locs + ['Total']):
+    for raft_loc in raft_locs:
+        arr_locs_thick_col3.append(arr_loc)
+        raft_locs_thick_col3.append(raft_loc)
+
+        df_sub = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == arr_loc) &
+                                  (df_thicks_means2['RaftLoc'] == raft_loc)]
+
+        mean = np.mean(df_sub['Mean'].tolist())
+        stdev = np.std(df_sub['Mean'].tolist())
+        means_thick_col3.append(mean)
+        stdev_thick_col3.append(stdev)
+
+df_thicks_means3 = pd.DataFrame({'ArrayLoc': arr_locs_thick_col3,
+                                 'RaftLoc': raft_locs_thick_col3,
+                                 'Mean': means_thick_col3,
+                                 'Stdev': stdev_thick_col3})
+
+#%%
+df_edges_means3.to_csv((dataDir / '800x800x100um Raft Measurements_Mean_Edge_Means2.csv'),
+                      index=False)
+df_thicks_means3.to_csv((dataDir / '800x800x100um Raft Measurements_Mean_Thickness_Means2.csv'),
+                       index=False)
+
+#%%
+import seaborn as sns
+from matplotlib import pyplot as plt
+
+plt.rcdefaults()
+sns.set_theme(style='white', font_scale=1.25)
+plt.rcParams['ytick.left'] = True
+fig, axes = plt.subplots(1, 1, figsize=(4, 4))
+
+sns.stripplot(ax=axes,
+              x='ArrayLoc',
+              y='Measurement',
+              data=df_edges_means,
+              hue='Array',
+              size=10,
+              palette='colorblind',
+              alpha=0.5,
+              jitter=0.2,
+              legend=False,
+              zorder=1)
+sns.swarmplot(ax=axes,
+              x='ArrayLoc',
+              y='Mean',
+              data=df_edges_means2,
+              hue='Array',
+              size=15,
+              palette='colorblind',
+              edgecolor='k',
+              linewidth=2,
+              legend=False,
+              zorder=2)
+axes.set_xticks([0, 1], arr_locs, fontweight='bold')
+axes.set_xlabel('', fontweight='bold')
+axes.set_xlim(-0.5, 1.5)
+axes.set_ylabel('Microraft Edge Length (μm)', fontweight='bold')
+minMax = [min(df_edges_means['Measurement']), max(df_edges_means['Measurement'])]
+axes.set_ylim(min(df_edges_means['Measurement']) * 0.998,
+              max(df_edges_means['Measurement']) * 1.004)
+axes.yaxis.set_major_locator(plt.MaxNLocator(integer=True, nbins=4))
+
+axes.plot([0, 0, 1, 1],
+          [minMax[1] + 1,
+           minMax[1] + 1.5,
+           minMax[1] + 1.5,
+           minMax[1] + 1],
+          linewidth=2,
+          color='k')
+axes.text((0 + 1) * 0.5,
+          minMax[1] + 1.5,
+          "n.s.",
+          ha='center',
+          va='bottom',
+          color='k',
+          fontsize=16)
+
+plt.tight_layout()
+plt.show()
+
+#%%
+plt.rcdefaults()
+sns.set_theme(style='white', font_scale=1.25)
+plt.rcParams['ytick.left'] = True
+fig, axes = plt.subplots(1, 2, figsize=(6, 4))
+
+df_raftCen = df_thicks_means[df_thicks_means['RaftLoc'] == 'Center']
+df_raftCen_mean = df_thicks_means2[df_thicks_means2['RaftLoc'] == 'Center']
+sns.stripplot(ax=axes[0],
+              x='ArrayLoc',
+              y='Measurement',
+              data = df_raftCen,
+              hue='Array',
+              size=10,
+              palette='colorblind',
+              alpha=0.5,
+              jitter=0.2,
+              legend=False,
+              zorder=1)
+sns.swarmplot(ax=axes[0],
+              x='ArrayLoc',
+              y='Mean',
+              data=df_raftCen_mean,
+              hue='Array',
+              size=15,
+              palette='colorblind',
+              edgecolor='k',
+              linewidth=2,
+              legend=False,
+              zorder=2)
+axes[0].set_xticks([0, 1], arr_locs, fontweight='bold')
+axes[0].set_xlabel('', fontweight='bold')
+axes[0].set_xlim(-0.5,1.5)
+minMax = [min(df_raftCen['Measurement']), max(df_raftCen['Measurement'])]
+axes[0].set_ylabel('Microraft Center Thickness (μm)', fontweight='bold')
+axes[0].set_ylim(minMax[0] * 0.96,
+                 minMax[1] * 1.065)
+axes[0].yaxis.set_major_locator(plt.MaxNLocator(integer=True, nbins=4))
+
+axes[0].plot([0, 0, 1, 1],
+             [minMax[1] + 1,
+              minMax[1] + 1.5,
+              minMax[1] + 1.5,
+              minMax[1] + 1],
+             linewidth=2,
+             color='k')
+axes[0].text((0 + 1) * 0.5,
+             minMax[1] + 1.5,
+             "n.s.",
+             ha='center',
+             va='bottom',
+             color='k',
+             fontsize=16)
+
+df_raftEdge = df_thicks_means[df_thicks_means['RaftLoc'] == 'Edge']
+df_raftEdge_mean = df_thicks_means2[df_thicks_means2['RaftLoc'] == 'Edge']
+sns.stripplot(ax=axes[1],
+              x='ArrayLoc',
+              y='Measurement',
+              data = df_raftEdge,
+              hue='Array',
+              size=10,
+              palette='colorblind',
+              alpha=0.5,
+              jitter=0.2,
+              legend=False,
+              zorder=1)
+sns.swarmplot(ax=axes[1],
+              x='ArrayLoc',
+              y='Mean',
+              data=df_raftEdge_mean,
+              hue='Array',
+              size=15,
+              palette='colorblind',
+              edgecolor='k',
+              linewidth=2,
+              legend=False,
+              zorder=2)
+axes[1].set_xticks([0, 1], arr_locs, fontweight='bold')
+axes[1].set_xlabel('', fontweight='bold')
+axes[1].set_xlim(-0.5,1.5)
+axes[1].set_ylabel('Microraft Edge Thickness (μm)', fontweight='bold')
+minMax = [min(df_raftEdge['Measurement']), max(df_raftEdge['Measurement'])]
+axes[1].set_ylim(minMax[0] * 0.99,
+                 minMax[1] * 1.025)
+axes[1].yaxis.set_major_locator(plt.MaxNLocator(integer=True, nbins=4))
+
+axes[1].plot([0, 0, 1, 1],
+             [minMax[1] + 1,
+              minMax[1] + 1.5,
+              minMax[1] + 1.5,
+              minMax[1] + 1],
+             linewidth=2,
+             color='k')
+axes[1].text((0 + 1) * 0.5,
+             minMax[1] + 1.5,
+             "n.s.",
+             ha='center',
+             va='bottom',
+             color='k',
+             fontsize=16
+             )
+
+plt.tight_layout()
+plt.show()
+
+#%% [markdown]
+# Raft flatness analysis
+
+#%%
+from pathlib import Path
+import pandas as pd
+import numpy as np
+
+dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241106_800x800x100um Raft')
+df_flatProps = pd.read_csv(dataDir / r'800x800x100um Raft Measurements_Flatness.csv')
+
+arrays = [_ for _ in range(1,4)]
+locs = ['Center', 'Edge']
+rafts = [_ for _ in range(1,6)]
+
+arrs_col = []
+locs_col = []
+flatProps_col = []
+stdev_col = []
+
+for arr in arrays:
+    for loc in locs:
+        arrs_col.append(arr)
+        locs_col.append(loc)
+
+        df_sub = df_flatProps[(df_flatProps['Array'] == arr) &
+                              (df_flatProps['ArrayLoc'] == loc)]
+        flatProp = np.mean(df_sub['FlatProp'].tolist())
+        flatProps_col.append(flatProp)
+        stdev = np.std(df_sub['FlatProp'].tolist())
+        stdev_col.append(stdev)
+
+df_flatProps_means = pd.DataFrame({'Array': arrs_col,
+                                  'ArrayLoc': locs_col,
+                                  'Mean': flatProps_col,
+                                  'Stdev': stdev_col})
+
+#%%
+locs_col2 = []
+flatProps_col2 = []
+stdev_col2 = []
+
+for loc in locs:
+    locs_col2.append(loc)
+
+    df_sub = df_flatProps[df_flatProps['ArrayLoc'] == loc]
+    flatProp = np.mean(df_sub['FlatProp'].tolist())
+    flatProps_col2.append(flatProp)
+    stdev = np.std(df_sub['FlatProp'].tolist())
+    stdev_col2.append(stdev)
+
+df_flatProps_means2 = pd.DataFrame({'ArrayLoc': locs_col2,
+                                  'Mean': flatProps_col2,
+                                  'Stdev': stdev_col2})
+
+#%%
+df_flatProps_means.to_csv((dataDir / '800x800x100um Raft Measurements_Flatness_Means.csv'),
+                         index=False)
+df_flatProps_means2.to_csv((dataDir / '800x800x100um Raft Measurements_Flatness_Means2.csv'),
+                          index=False)
+
+#%%
+import scipy.stats as stats
+
+flatProps_center = df_flatProps_means[df_flatProps_means['ArrayLoc'] == 'Center']['Mean']
+flatProps_edge = df_flatProps_means[df_flatProps_means['ArrayLoc'] == 'Edge']['Mean']
+ttest_flatProp = stats.ttest_ind(a=flatProps_edge, b=flatProps_edge, equal_var=True)
+print(f'Raft FlatProp: {ttest_flatProp}')
+
+#%%
+import seaborn as sns
+from matplotlib import pyplot as plt
+
+plt.rcdefaults()
+sns.set_theme(style='white', font_scale=1.25)
+plt.rcParams['ytick.left'] = True
+fig, axes = plt.subplots(1, 1, figsize=(4, 4))
+
+sns.stripplot(ax=axes,
+              x='ArrayLoc',
+              y='FlatProp',
+              data=df_flatProps,
+              hue='Array',
+              size=10,
+              palette='colorblind',
+              alpha=0.5,
+              jitter=0.2,
+              legend=False,
+              zorder=1)
+sns.swarmplot(ax=axes,
+              x='ArrayLoc',
+              y='Mean',
+              data=df_flatProps_means,
+              hue='Array',
+              size=15,
+              palette='colorblind',
+              edgecolor='k',
+              linewidth=2,
+              legend=False,
+              zorder=2)
+axes.set_xticks([0, 1], locs, fontweight='bold')
+axes.set_xlabel('', fontweight='bold')
+axes.set_xlim(-0.5, 1.5)
+axes.set_ylabel('Proportion of Flat Microraft Surface', fontweight='bold', fontsize=14)
+minMax = [min(df_flatProps['FlatProp']), max(df_flatProps['FlatProp'])]
+axes.set_ylim(min(df_flatProps['FlatProp']) * 0.997,
+              max(df_flatProps['FlatProp']) * 1.007)
+axes.yaxis.set_major_locator(plt.MaxNLocator(integer=True, nbins=5))
+
+axes.plot([0, 0, 1, 1],
+          [minMax[1] + 0.002,
+           minMax[1] + 0.003,
+           minMax[1] + 0.003,
+           minMax[1] + 0.002],
+          linewidth=2,
+          color='k')
+axes.text((0 + 1) * 0.5,
+          minMax[1] + 0.003,
+          "n.s.",
+          ha='center',
+          va='bottom',
+          color='k',
+          fontsize=16)
+
+plt.tight_layout()
+plt.show()
+
+#%% [markdown]
 # Bead distribution analysis
 
 #%%
@@ -14,7 +518,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 #%%
-dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\DIC\3. 800x800x104um\241029_Beads_Compiled')
+dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\DIC\3. 800x800x100um\241029_Beads_Compiled')
 arrs = [1, 2, 3]
 locs = ['center', 'edge']
 px_size = 1.59170008 # um/px
@@ -193,7 +697,7 @@ df_beads_mean.to_csv((dataDir / 'Bead Distribution_Means.csv'),
                 index=False)
 
 #%%
-dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\DIC\3. 800x800x104um\241029_Beads_Compiled')
+dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\DIC\3. 800x800x100um\241029_Beads_Compiled')
 df_beads = pd.read_csv(dataDir / 'Bead Distribution.csv')
 df_beads_mean = pd.read_csv(dataDir / 'Bead Distribution_Means.csv')
 
@@ -317,678 +821,6 @@ plt.tight_layout()
 plt.show()
 
 #%% [markdown]
-# Raft dimensions analysis.
-
-#%%
-from pathlib import Path
-import pandas as pd
-import numpy as np
-
-dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241106_800x800x104um Raft')
-df_edges = pd.read_csv(dataDir / r'800x800x104um Raft Measurements_Raw_Edge.csv')
-df_thicks = pd.read_csv(dataDir / r'800x800x104um Raft Measurements_Raw_Thickness.csv')
-
-arrays = [_ for _ in range(1,4)]
-arr_locs = ['Center', 'Edge']
-raft_locs = ['Center', 'Edge']
-rafts = [_ for _ in range(1,6)]
-
-arrs_edge_col = []
-arr_locs_edge_col = []
-rafts_edge_col = []
-measures_edge_col = []
-stdev_edge_col = []
-
-for arr in arrays:
-    for arr_loc in arr_locs:
-        for raft in rafts:
-            arrs_edge_col.append(arr)
-            arr_locs_edge_col.append(arr_loc)
-            rafts_edge_col.append(raft)
-
-            df_sub = df_edges[(df_edges['Array'] == arr) &
-                              (df_edges['ArrayLoc'] == arr_loc) &
-                              (df_edges['Raft'] == raft)]
-            measure_edge = np.mean(df_sub['Measurement'].tolist())
-            measures_edge_col.append(measure_edge)
-            stdev_edge = np.std(df_sub['Measurement'].tolist())
-            stdev_edge_col.append(stdev_edge)
-
-df_edges_means = pd.DataFrame({'Array': arrs_edge_col,
-                               'ArrayLoc': arr_locs_edge_col,
-                               'Raft': rafts_edge_col,
-                               'Measurement': measures_edge_col,
-                               'Stdev': stdev_edge_col})
-
-arrs_thick_col = []
-arr_locs_thick_col = []
-rafts_thick_col = []
-raft_locs_thick_col = []
-measures_thick_col = []
-stdev_thick_col = []
-for arr in arrays:
-    for arr_loc in arr_locs:
-        for raft in rafts:
-            for raft_loc in raft_locs:
-                arrs_thick_col.append(arr)
-                arr_locs_thick_col.append(arr_loc)
-                rafts_thick_col.append(raft)
-                raft_locs_thick_col.append(raft_loc)
-
-                df_sub = df_thicks[(df_thicks['Array'] == arr) &
-                                   (df_thicks['ArrayLoc'] == arr_loc) &
-                                   (df_thicks['Raft'] == raft) &
-                                   (df_thicks['RaftLoc'] == raft_loc)]
-                measure_thick = np.mean(df_sub['Measurement'].tolist())
-                measures_thick_col.append(measure_thick)
-                stdev_thick = np.std(df_sub['Measurement'].tolist())
-                stdev_thick_col.append(stdev_thick)
-df_thicks_means = pd.DataFrame({'Array': arrs_thick_col,
-                                'ArrayLoc': arr_locs_thick_col,
-                                'Raft': rafts_thick_col,
-                                'RaftLoc': raft_locs_thick_col,
-                                'Measurement': measures_thick_col,
-                                'Stdev': stdev_thick_col})
-
-#%%
-df_edges_means.to_csv((dataDir / '800x800x104um Raft Measurements_Mean_Edge.csv'),
-                      index=False)
-df_thicks_means.to_csv((dataDir / '800x800x104um Raft Measurements_Mean_Thickness.csv'),
-                       index=False)
-
-#%%
-arrs_edge_col2 = []
-arr_locs_edge_col2 = []
-means_edge_col2 = []
-stdev_edge_col2 = []
-
-for arr in arrays:
-    for arr_loc in (arr_locs + ['Total']):
-        arrs_edge_col2.append(arr)
-        arr_locs_edge_col2.append(arr_loc)
-
-        if arr_loc != 'Total':
-            df_sub = df_edges_means[(df_edges_means['Array'] == arr) &
-                                    (df_edges_means['ArrayLoc'] == arr_loc)]
-        else:
-            df_sub = df_edges_means[df_edges_means['Array'] == arr]
-        mean = np.mean(df_sub['Measurement'].tolist())
-        stdev = np.std(df_sub['Measurement'].tolist())
-        means_edge_col2.append(mean)
-        stdev_edge_col2.append(stdev)
-
-df_edges_means2 = pd.DataFrame({'Array': arrs_edge_col2,
-                                'ArrayLoc': arr_locs_edge_col2,
-                                'Mean': means_edge_col2,
-                                'Stdev': stdev_edge_col2})
-
-arrs_thick_col2 = []
-arr_locs_thick_col2 = []
-raft_locs_thick_col2 = []
-means_thick_col2 = []
-stdev_thick_col2 = []
-
-for arr in arrays:
-    for arr_loc in (arr_locs + ['Total']):
-        for raft_loc in raft_locs:
-            arrs_thick_col2.append(arr)
-            arr_locs_thick_col2.append(arr_loc)
-            raft_locs_thick_col2.append(raft_loc)
-
-            if arr_loc != 'Total':
-                df_sub = df_thicks_means[(df_thicks_means['Array'] == arr) &
-                                         (df_thicks_means['ArrayLoc'] == arr_loc) &
-                                         (df_thicks_means['RaftLoc'] == raft_loc)]
-            else:
-                df_sub = df_thicks_means[(df_thicks_means['Array'] == arr) &
-                                         (df_thicks_means['RaftLoc'] == raft_loc)]
-            mean = np.mean(df_sub['Measurement'].tolist())
-            stdev = np.std(df_sub['Measurement'].tolist())
-            means_thick_col2.append(mean)
-            stdev_thick_col2.append(stdev)
-
-df_thicks_means2 = pd.DataFrame({'Array': arrs_thick_col2,
-                                 'ArrayLoc': arr_locs_thick_col2,
-                                 'RaftLoc': raft_locs_thick_col2,
-                                 'Mean': means_thick_col2,
-                                 'Stdev': stdev_thick_col2})
-
-#%%
-df_edges_means2.to_csv((dataDir / '800x800x104um Raft Measurements_Mean_Edge_Means.csv'),
-                      index=False)
-df_thicks_means2.to_csv((dataDir / '800x800x104um Raft Measurements_Mean_Thickness_Means.csv'),
-                       index=False)
-
-#%%
-import scipy.stats as stats
-
-arrCenters_edge = df_edges_means2[df_edges_means2['ArrayLoc'] == 'Center']['Mean']
-arrEdges_edge = df_edges_means2[df_edges_means2['ArrayLoc'] == 'Edge']['Mean']
-ttest_edge = stats.ttest_ind(a=arrCenters_edge, b=arrEdges_edge, equal_var=True)
-print(f'Raft Edges: {ttest_edge}')
-
-center_arrCenters_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Center') &
-                                           (df_thicks_means2['RaftLoc'] == 'Center')]['Mean']
-center_arrEdges_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Edge') &
-                                         (df_thicks_means2['RaftLoc'] == 'Center')]['Mean']
-ttest_center_thick = stats.ttest_ind(a=center_arrCenters_thick, b=center_arrEdges_thick, equal_var=True)
-print(f'Raft Center Thickness: {ttest_center_thick}')
-
-edge_arrCenters_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Center') &
-                                         (df_thicks_means2['RaftLoc'] == 'Edge')]['Mean']
-edge_arrEdges_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Edge') &
-                                       (df_thicks_means2['RaftLoc'] == 'Edge')]['Mean']
-ttest_edge_thick = stats.ttest_ind(a=edge_arrCenters_thick, b=edge_arrEdges_thick, equal_var=True)
-print(f'Raft Edge Thickness: {ttest_edge_thick}')
-
-#%%
-arr_locs_edge_col3 = []
-means_edge_col3 = []
-stdev_edge_col3 = []
-
-for arr_loc in (arr_locs + ['Total']):
-    arr_locs_edge_col3.append(arr_loc)
-
-    df_sub = df_edges_means2[df_edges_means2['ArrayLoc'] == arr_loc]
-
-    mean = np.mean(df_sub['Mean'].tolist())
-    stdev = np.std(df_sub['Mean'].tolist())
-    means_edge_col3.append(mean)
-    stdev_edge_col3.append(stdev)
-
-df_edges_means3 = pd.DataFrame({'ArrayLoc': arr_locs_edge_col3,
-                                'Mean': means_edge_col3,
-                                'Stdev': stdev_edge_col3})
-
-arr_locs_thick_col3 = []
-raft_locs_thick_col3 = []
-means_thick_col3 = []
-stdev_thick_col3 = []
-
-for arr_loc in (arr_locs + ['Total']):
-    for raft_loc in raft_locs:
-        arr_locs_thick_col3.append(arr_loc)
-        raft_locs_thick_col3.append(raft_loc)
-
-        df_sub = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == arr_loc) &
-                                  (df_thicks_means2['RaftLoc'] == raft_loc)]
-
-        mean = np.mean(df_sub['Mean'].tolist())
-        stdev = np.std(df_sub['Mean'].tolist())
-        means_thick_col3.append(mean)
-        stdev_thick_col3.append(stdev)
-
-df_thicks_means3 = pd.DataFrame({'ArrayLoc': arr_locs_thick_col3,
-                                 'RaftLoc': raft_locs_thick_col3,
-                                 'Mean': means_thick_col3,
-                                 'Stdev': stdev_thick_col3})
-
-#%%
-df_edges_means3.to_csv((dataDir / '800x800x104um Raft Measurements_Mean_Edge_Means2.csv'),
-                      index=False)
-df_thicks_means3.to_csv((dataDir / '800x800x104um Raft Measurements_Mean_Thickness_Means2.csv'),
-                       index=False)
-
-#%%
-import seaborn as sns
-from matplotlib import pyplot as plt
-
-plt.rcdefaults()
-sns.set_theme(style='white', font_scale=1.25)
-plt.rcParams['ytick.left'] = True
-fig, axes = plt.subplots(1, 1, figsize=(4, 4))
-
-sns.stripplot(ax=axes,
-              x='ArrayLoc',
-              y='Measurement',
-              data=df_edges_means,
-              hue='Array',
-              size=10,
-              palette='colorblind',
-              alpha=0.5,
-              jitter=0.2,
-              legend=False,
-              zorder=1)
-sns.swarmplot(ax=axes,
-              x='ArrayLoc',
-              y='Mean',
-              data=df_edges_means2,
-              hue='Array',
-              size=15,
-              palette='colorblind',
-              edgecolor='k',
-              linewidth=2,
-              legend=False,
-              zorder=2)
-axes.set_xticks([0, 1], arr_locs, fontweight='bold')
-axes.set_xlabel('', fontweight='bold')
-axes.set_xlim(-0.5, 1.5)
-axes.set_ylabel('Raft Edge Length (μm)', fontweight='bold')
-minMax = [min(df_edges_means['Measurement']), max(df_edges_means['Measurement'])]
-axes.set_ylim(min(df_edges_means['Measurement']) * 0.998,
-              max(df_edges_means['Measurement']) * 1.004)
-axes.yaxis.set_major_locator(plt.MaxNLocator(integer=True, nbins=4))
-
-axes.plot([0, 0, 1, 1],
-          [minMax[1] + 1,
-           minMax[1] + 1.5,
-           minMax[1] + 1.5,
-           minMax[1] + 1],
-          linewidth=2,
-          color='k')
-axes.text((0 + 1) * 0.5,
-          minMax[1] + 1.5,
-          "n.s.",
-          ha='center',
-          va='bottom',
-          color='k',
-          fontsize=16)
-
-plt.tight_layout()
-plt.show()
-
-#%%
-plt.rcdefaults()
-sns.set_theme(style='white', font_scale=1.25)
-plt.rcParams['ytick.left'] = True
-fig, axes = plt.subplots(1, 2, figsize=(6, 4))
-
-df_raftCen = df_thicks_means[df_thicks_means['RaftLoc'] == 'Center']
-df_raftCen_mean = df_thicks_means2[df_thicks_means2['RaftLoc'] == 'Center']
-sns.stripplot(ax=axes[0],
-              x='ArrayLoc',
-              y='Measurement',
-              data = df_raftCen,
-              hue='Array',
-              size=10,
-              palette='colorblind',
-              alpha=0.5,
-              jitter=0.2,
-              legend=False,
-              zorder=1)
-sns.swarmplot(ax=axes[0],
-              x='ArrayLoc',
-              y='Mean',
-              data=df_raftCen_mean,
-              hue='Array',
-              size=15,
-              palette='colorblind',
-              edgecolor='k',
-              linewidth=2,
-              legend=False,
-              zorder=2)
-axes[0].set_xticks([0, 1], arr_locs, fontweight='bold')
-axes[0].set_xlabel('', fontweight='bold')
-axes[0].set_xlim(-0.5,1.5)
-minMax = [min(df_raftCen['Measurement']), max(df_raftCen['Measurement'])]
-axes[0].set_ylabel('Raft Center Thickness (μm)', fontweight='bold')
-axes[0].set_ylim(minMax[0] * 0.96,
-                 minMax[1] * 1.065)
-axes[0].yaxis.set_major_locator(plt.MaxNLocator(integer=True, nbins=4))
-
-axes[0].plot([0, 0, 1, 1],
-             [minMax[1] + 1,
-              minMax[1] + 1.5,
-              minMax[1] + 1.5,
-              minMax[1] + 1],
-             linewidth=2,
-             color='k')
-axes[0].text((0 + 1) * 0.5,
-             minMax[1] + 1.5,
-             "n.s.",
-             ha='center',
-             va='bottom',
-             color='k',
-             fontsize=16)
-
-df_raftEdge = df_thicks_means[df_thicks_means['RaftLoc'] == 'Edge']
-df_raftEdge_mean = df_thicks_means2[df_thicks_means2['RaftLoc'] == 'Edge']
-sns.stripplot(ax=axes[1],
-              x='ArrayLoc',
-              y='Measurement',
-              data = df_raftEdge,
-              hue='Array',
-              size=10,
-              palette='colorblind',
-              alpha=0.5,
-              jitter=0.2,
-              legend=False,
-              zorder=1)
-sns.swarmplot(ax=axes[1],
-              x='ArrayLoc',
-              y='Mean',
-              data=df_raftEdge_mean,
-              hue='Array',
-              size=15,
-              palette='colorblind',
-              edgecolor='k',
-              linewidth=2,
-              legend=False,
-              zorder=2)
-axes[1].set_xticks([0, 1], arr_locs, fontweight='bold')
-axes[1].set_xlabel('', fontweight='bold')
-axes[1].set_xlim(-0.5,1.5)
-axes[1].set_ylabel('Raft Edge Thickness (μm)', fontweight='bold')
-minMax = [min(df_raftEdge['Measurement']), max(df_raftEdge['Measurement'])]
-axes[1].set_ylim(minMax[0] * 0.99,
-                 minMax[1] * 1.025)
-axes[1].yaxis.set_major_locator(plt.MaxNLocator(integer=True, nbins=4))
-
-axes[1].plot([0, 0, 1, 1],
-             [minMax[1] + 1,
-              minMax[1] + 1.5,
-              minMax[1] + 1.5,
-              minMax[1] + 1],
-             linewidth=2,
-             color='k')
-axes[1].text((0 + 1) * 0.5,
-             minMax[1] + 1.5,
-             "n.s.",
-             ha='center',
-             va='bottom',
-             color='k',
-             fontsize=16
-             )
-
-plt.tight_layout()
-plt.show()
-
-#%% [markdown]
-# Raft grading
-
-#%%
-from pathlib import Path
-import pandas as pd
-import numpy as np
-
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-# dataDirs = [Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Eu & Aneu Gastruloid Fluor Analysis')]
-dataDirs = [Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Fixed Gastruloid Fluor Analysis'),
-            Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1 - Technical\Data\Eu & Aneu Gastruloid Fluor Analysis')]
-gradPaths = []
-for dir in dataDirs:
-    gradPath = [file for file in dir.iterdir() if 'RaftGrading' in file.stem]
-    gradPaths.extend(gradPath)
-
-#%%
-grads = ['Pass', 'Excl_missing', 'Excl_empty', 'Excl_border']
-arrLocs = ['Center', 'Edge', 'Total']
-
-cenRafts = []
-for r in range(2, 21):
-    for c in range(2, 21):
-        cenRafts.append((r * 23) + (c + 1))
-
-arrs_col = []
-arrTypes_col = []
-grads_col = []
-arrLocs_col = []
-counts_col = []
-
-for idx1, gradPath in enumerate(gradPaths):
-    df_grad = pd.read_csv(gradPath)
-
-    for grad in grads:
-        if grad == 'Pass':
-            # Include lo_int rafts for only fixed arrays (Hoechst still usable)
-            if idx1 < 3:
-                rafts = ([int(raft) for raft in df_grad['Pass'].tolist() if pd.notna(raft)] +
-                         [int(raft) for raft in df_grad['Fail'].tolist() if pd.notna(raft)] +
-                         [int(raft) for raft in df_grad['Excl_lo_int'].tolist() if pd.notna(raft)])
-            else:
-                rafts = ([int(raft) for raft in df_grad['Pass'].tolist() if pd.notna(raft)] +
-                         [int(raft) for raft in df_grad['Fail'].tolist() if pd.notna(raft)])
-            print((idx1 + 1), len(rafts))
-        else:
-            rafts = [int(raft) for raft in df_grad[grad].tolist() if pd.notna(raft)]
-
-        count = [0, 0]
-        for raft in rafts:
-            if raft in cenRafts:
-                count[0] += 1
-            else:
-                count[1] += 1
-
-        for idx2, arrLoc in enumerate(arrLocs):
-            if idx1 < 3:
-                arrTypes_col.append('Fixed')
-            else:
-                arrTypes_col.append('Live')
-
-            arrs_col.append(idx1 + 1)
-            grads_col.append(grad)
-
-            arrLocs_col.append(arrLoc)
-
-            if arrLoc != 'Total':
-                counts_col.append(count[idx2])
-            else:
-                counts_col.append(np.sum(count))
-
-# %%
-percRafts_col = []
-for idx, arrLoc in enumerate(arrLocs_col):
-    percRaft = 0
-    if arrLoc == 'Total':
-        percRaft = counts_col[idx] / 23**2
-    elif arrLoc == 'Center':
-        percRaft = counts_col[idx] / len(cenRafts)
-    elif arrLoc == 'Edge':
-        percRaft = counts_col[idx] / (23**2 - len(cenRafts))
-    percRafts_col.append(percRaft * 100)
-
-df_grad_counts = pd.DataFrame({'Array': arrs_col,
-                               'ArrType': arrTypes_col,
-                               'Grade': grads_col,
-                               'ArrayLoc': arrLocs_col,
-                               'Count': counts_col,
-                               'PercRaft': percRafts_col})
-
-#%%
-grads_col2 = []
-arrLocs_col2 = []
-means_col2 = []
-stdevs_col2 = []
-
-for grad in grads:
-    for arrLoc in arrLocs:
-        grads_col2.append(grad)
-        arrLocs_col2.append(arrLoc)
-
-        df_sub = df_grad_counts[(df_grad_counts['Grade'] == grad) &
-                                (df_grad_counts['ArrayLoc'] == arrLoc)]
-        mean = np.mean(df_sub['PercRaft'])
-        stdev = np.std(df_sub['PercRaft'])
-
-        means_col2.append(mean)
-        stdevs_col2.append(stdev)
-
-df_grad_means = pd.DataFrame({'Grade': grads_col2,
-                              'ArrayLoc': arrLocs_col2,
-                              'Mean': means_col2,
-                              'Stdev': stdevs_col2})
-
-#%%
-grad_labs = ['Pass', 'Missing', 'Empty', 'Border']
-
-#%%
-df_grad_counts.to_csv((dataDirs[0].parent / 'Raft Grading Count_Raw.csv'),
-                      index=False)
-df_grad_means.to_csv((dataDirs[0].parent / 'Raft Grading Count_Mean.csv'),
-                     index=False)
-
-#%%
-plt.rcdefaults()
-sns.set_theme(style='white', font_scale=1.25)
-plt.rcParams['ytick.left'] = True
-fig, axes = plt.subplots(1, 1, figsize=(5, 4))
-
-df_sub = df_grad_counts[df_grad_counts['ArrayLoc'] == 'Total']
-df_sub.reset_index(drop=True, inplace=True)
-df_sub_mean = df_grad_means[df_grad_means['ArrayLoc'] == 'Total']
-df_sub_mean.reset_index(drop=True, inplace=True)
-
-sns.stripplot(ax=axes,
-              x='Grade',
-              y='PercRaft',
-              data=df_sub[df_sub['ArrType'] == 'Fixed'],
-              hue='Array',
-              size=10,
-              alpha=0.75,
-              marker='o',
-              jitter=0.3,
-              palette='viridis',
-              legend=False,
-              zorder=1)
-sns.stripplot(ax=axes,
-              x='Grade',
-              y='PercRaft',
-              data=df_sub[df_sub['ArrType'] == 'Live'],
-              hue='Array',
-              size=10,
-              alpha=0.75,
-              marker='^',
-              jitter=0.3,
-              palette='viridis',
-              legend=False,
-              zorder=1)
-axes.errorbar(x=df_sub_mean['Grade'],
-             y=df_sub_mean['Mean'],
-             yerr=df_sub_mean['Stdev'],
-             fmt='none',
-             color='black',
-             capsize=10,
-             capthick=3,
-             linewidth=3,
-             zorder=2)
-for i, row in df_sub_mean.iterrows():
-    axes.hlines(y=row['Mean'],
-               xmin= (i - 0.4),
-               xmax= (i + 0.4),
-               colors='black',
-               linewidth=3,
-               zorder=3)
-
-axes.set_xlabel('')
-axes.set_xticks([0, 1, 2, 3],
-                grad_labs,
-                fontweight='bold')
-axes.set_ylabel('% Rafts', fontweight='bold')
-axes.set_ylim(0, (np.max(df_sub['PercRaft']) * 1.1))
-
-plt.tight_layout()
-plt.show()
-
-#%%
-import scipy.stats as stats
-
-for grad in grads:
-    df_sub = df_grad_counts[df_grad_counts['Grade'] == grad]
-    df_center = df_sub[df_sub['ArrayLoc'] == 'Center']
-    df_edge = df_sub[df_sub['ArrayLoc'] == 'Edge']
-    ttest = stats.ttest_ind(a=df_center['PercRaft'],
-                            b=df_edge['PercRaft'],
-                            equal_var=True)
-    print(f'{grad}: {ttest}')
-
-#%%
-arrLocs_plot = arrLocs[:-1]
-sig = ['n.s.', 'n.s.', 'n.s.', 'n.s.']
-
-plt.rcdefaults()
-sns.set_theme(style='white', font_scale=1.25)
-plt.rcParams['ytick.left'] = True
-fig, axes = plt.subplots(2, 2, figsize=(8, 6))
-
-for idx, grad in enumerate(grads):
-    row = int(idx / 2)
-    col = idx % 2
-
-    df_sub = df_grad_counts[(df_grad_counts['Grade'] == grad) &
-                            (df_grad_counts['ArrayLoc'] != 'Total')]
-    df_sub.reset_index(drop=True, inplace=True)
-    df_sub_mean = df_grad_means[(df_grad_means['Grade'] == grad) &
-                                (df_grad_means['ArrayLoc'] != 'Total')]
-    df_sub_mean.reset_index(drop=True, inplace=True)
-
-    sns.stripplot(ax=axes[row, col],
-                  x='ArrayLoc',
-                  y='PercRaft',
-                  data=df_sub[df_sub['ArrType'] == 'Fixed'],
-                  hue='Array',
-                  size=10,
-                  alpha=0.75,
-                  marker='o',
-                  jitter=0.3,
-                  palette='viridis',
-                  legend=False,
-                  zorder=1)
-    sns.stripplot(ax=axes[row, col],
-                  x='ArrayLoc',
-                  y='PercRaft',
-                  data=df_sub[df_sub['ArrType'] == 'Live'],
-                  hue='Array',
-                  size=10,
-                  alpha=0.75,
-                  marker='^',
-                  jitter=0.3,
-                  palette='viridis',
-                  legend=False,
-                  zorder=1)
-
-    axes[row, col].errorbar(x=df_sub_mean['ArrayLoc'],
-                            y=df_sub_mean['Mean'],
-                            yerr=df_sub_mean['Stdev'],
-                            fmt='none',
-                            color='black',
-                            capsize=15,
-                            capthick=3,
-                            linewidth=3,
-                            zorder=2)
-    for i, row2 in df_sub_mean.iterrows():
-        axes[row, col].hlines(y=row2['Mean'],
-                              xmin=(i - 0.4),
-                              xmax=(i + 0.4),
-                              colors='black',
-                              linewidth=3,
-                              zorder=3)
-
-    axes[row, col].set_xlabel('')
-    axes[row, col].set_xticks([0, 1],
-                              arrLocs_plot,
-                              fontweight='bold')
-    axes[row, col].set_xlim(-0.5, 1.5)
-    axes[row, col].set_ylabel(f'% {grad_labs[idx]}', fontweight='bold')
-    max_ylim = np.max(df_sub['PercRaft'])
-    axes[row, col].set_ylim(0, (max_ylim * 1.22))
-
-    axes[row, col].plot([0, 0, 1, 1],
-                        [max_ylim * 1.07,
-                         max_ylim * 1.1,
-                         max_ylim * 1.1,
-                         max_ylim * 1.07],
-                        linewidth=2,
-                        color='k')
-    if sig[idx] == 'n.s.':
-        height_factor = 1.1
-    else:
-        height_factor = 1.06
-
-    axes[row, col].text((0 + 1) * 0.5,
-                        max_ylim * height_factor,
-                        sig[idx],
-                        ha='center',
-                        va='bottom',
-                        color='k',
-                        fontsize=16
-                        )
-
-plt.tight_layout()
-plt.show()
-
-#%% [markdown]
 # Patterning metrics
 
 #%%
@@ -1007,7 +839,7 @@ dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241213_Array
 arrays = [_ for _ in range(1, 4)]
 arrLocs = ['Center', 'Edge', 'Total']
 numCenRafts = (23 - (2 * 2)) ** 2
-grads = ['Pass', 'Missing', 'Border']
+grads = ['Centered', 'Missing', 'Border']
 
 #%%
 df_counts = pd.read_csv(dataDir / 'Pattern Grading Count.csv')
@@ -1047,9 +879,9 @@ for grad in grads:
         stdevs_col2.append(stdev)
 
 df_counts_means = pd.DataFrame({'Grade': grads_col2,
-                              'ArrayLoc': arrLocs_col2,
-                              'Mean': means_col2,
-                              'Stdev': stdevs_col2})
+                                'ArrayLoc': arrLocs_col2,
+                                'Mean': means_col2,
+                                'Stdev': stdevs_col2})
 
 #%%
 df_counts.to_csv((dataDir / 'Pattern Grading Count_Perc.csv'), index=False)
@@ -1096,7 +928,7 @@ axes.set_xlabel('')
 axes.set_xticks([0, 1, 2],
                 grads,
                 fontweight='bold')
-axes.set_ylabel('% Rafts', fontweight='bold')
+axes.set_ylabel('% Microrafts', fontweight='bold')
 axes.set_ylim(0, (np.max(df_sub['PercRaft']) * 1.1))
 
 plt.tight_layout()
@@ -1492,6 +1324,299 @@ plt.show()
 #
 # df_pattDiams.to_csv((dataDir / 'Pattern Diameter.csv'),
 #                     index=False)
+
+#%% [markdown]
+# Raft grading
+
+#%%
+from pathlib import Path
+import pandas as pd
+import numpy as np
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# dataDirs = [Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1\Data\Eu & Aneu Gastruloid Fluor Analysis')]
+dataDirs = [Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1\Data\Fixed Gastruloid Fluor Analysis'),
+            Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1\Data\Eu & Aneu Gastruloid Fluor Analysis')]
+gradPaths = []
+for dir in dataDirs:
+    gradPath = [file for file in dir.iterdir() if 'RaftGrading' in file.stem]
+    gradPaths.extend(gradPath)
+
+#%%
+grads = ['Pass', 'Excl_missing', 'Excl_empty', 'Excl_border']
+grad_labs = ['Centered', 'Missing', 'Empty', 'Border']
+arrLocs = ['Center', 'Edge', 'Total']
+
+cenRafts = []
+for r in range(2, 21):
+    for c in range(2, 21):
+        cenRafts.append((r * 23) + (c + 1))
+
+arrs_col = []
+arrTypes_col = []
+grads_col = []
+arrLocs_col = []
+counts_col = []
+
+for idx1, gradPath in enumerate(gradPaths):
+    df_grad = pd.read_csv(gradPath)
+
+    for idx_gr, grad in enumerate(grads):
+        if grad == 'Pass':
+            # Include lo_int rafts for only fixed arrays (Hoechst still usable)
+            if idx1 < 3:
+                rafts = ([int(raft) for raft in df_grad['Pass'].tolist() if pd.notna(raft)] +
+                         [int(raft) for raft in df_grad['Fail'].tolist() if pd.notna(raft)] +
+                         [int(raft) for raft in df_grad['Excl_lo_int'].tolist() if pd.notna(raft)])
+            else:
+                rafts = ([int(raft) for raft in df_grad['Pass'].tolist() if pd.notna(raft)] +
+                         [int(raft) for raft in df_grad['Fail'].tolist() if pd.notna(raft)])
+            print((idx1 + 1), len(rafts))
+        else:
+            rafts = [int(raft) for raft in df_grad[grad].tolist() if pd.notna(raft)]
+
+        count = [0, 0]
+        for raft in rafts:
+            if raft in cenRafts:
+                count[0] += 1
+            else:
+                count[1] += 1
+
+        for idx2, arrLoc in enumerate(arrLocs):
+            if idx1 < 3:
+                arrTypes_col.append('Fixed')
+            else:
+                arrTypes_col.append('Live')
+
+            arrs_col.append(idx1 + 1)
+            grads_col.append(grad_labs[idx_gr])
+
+            arrLocs_col.append(arrLoc)
+
+            if arrLoc != 'Total':
+                counts_col.append(count[idx2])
+            else:
+                counts_col.append(np.sum(count))
+
+# %%
+percRafts_col = []
+for idx, arrLoc in enumerate(arrLocs_col):
+    percRaft = 0
+    if arrLoc == 'Total':
+        percRaft = counts_col[idx] / 23**2
+    elif arrLoc == 'Center':
+        percRaft = counts_col[idx] / len(cenRafts)
+    elif arrLoc == 'Edge':
+        percRaft = counts_col[idx] / (23**2 - len(cenRafts))
+    percRafts_col.append(percRaft * 100)
+
+df_grad_counts = pd.DataFrame({'Array': arrs_col,
+                               'ArrType': arrTypes_col,
+                               'Grade': grads_col,
+                               'ArrayLoc': arrLocs_col,
+                               'Count': counts_col,
+                               'PercRaft': percRafts_col})
+
+#%%
+grads_col2 = []
+arrLocs_col2 = []
+means_col2 = []
+stdevs_col2 = []
+
+for grad in grad_labs:
+    for arrLoc in arrLocs:
+        grads_col2.append(grad)
+        arrLocs_col2.append(arrLoc)
+
+        df_sub = df_grad_counts[(df_grad_counts['Grade'] == grad) &
+                                (df_grad_counts['ArrayLoc'] == arrLoc)]
+        mean = np.mean(df_sub['PercRaft'])
+        stdev = np.std(df_sub['PercRaft'])
+
+        means_col2.append(mean)
+        stdevs_col2.append(stdev)
+
+df_grad_means = pd.DataFrame({'Grade': grads_col2,
+                              'ArrayLoc': arrLocs_col2,
+                              'Mean': means_col2,
+                              'Stdev': stdevs_col2})
+
+#%%
+df_grad_counts.to_csv((dataDirs[0].parent / 'Raft Grading Count_Raw.csv'),
+                      index=False)
+df_grad_means.to_csv((dataDirs[0].parent / 'Raft Grading Count_Mean.csv'),
+                     index=False)
+
+#%%
+plt.rcdefaults()
+sns.set_theme(style='white', font_scale=1.25)
+plt.rcParams['ytick.left'] = True
+fig, axes = plt.subplots(1, 1, figsize=(5, 4))
+
+df_sub = df_grad_counts[df_grad_counts['ArrayLoc'] == 'Total']
+df_sub.reset_index(drop=True, inplace=True)
+df_sub_mean = df_grad_means[df_grad_means['ArrayLoc'] == 'Total']
+df_sub_mean.reset_index(drop=True, inplace=True)
+
+sns.stripplot(ax=axes,
+              x='Grade',
+              y='PercRaft',
+              data=df_sub[df_sub['ArrType'] == 'Fixed'],
+              hue='Array',
+              size=10,
+              alpha=0.75,
+              marker='o',
+              jitter=0.3,
+              palette='viridis',
+              legend=False,
+              zorder=1)
+sns.stripplot(ax=axes,
+              x='Grade',
+              y='PercRaft',
+              data=df_sub[df_sub['ArrType'] == 'Live'],
+              hue='Array',
+              size=10,
+              alpha=0.75,
+              marker='^',
+              jitter=0.3,
+              palette='viridis',
+              legend=False,
+              zorder=1)
+axes.errorbar(x=df_sub_mean['Grade'],
+             y=df_sub_mean['Mean'],
+             yerr=df_sub_mean['Stdev'],
+             fmt='none',
+             color='black',
+             capsize=10,
+             capthick=3,
+             linewidth=3,
+             zorder=2)
+for i, row in df_sub_mean.iterrows():
+    axes.hlines(y=row['Mean'],
+               xmin= (i - 0.4),
+               xmax= (i + 0.4),
+               colors='black',
+               linewidth=3,
+               zorder=3)
+
+axes.set_xlabel('')
+axes.set_xticks([0, 1, 2, 3],
+                grad_labs,
+                fontweight='bold')
+axes.set_ylabel('% Microrafts', fontweight='bold')
+axes.set_ylim(0, (np.max(df_sub['PercRaft']) * 1.1))
+
+plt.tight_layout()
+plt.show()
+
+#%%
+import scipy.stats as stats
+
+for grad in grad_labs:
+    df_sub = df_grad_counts[df_grad_counts['Grade'] == grad]
+    df_center = df_sub[df_sub['ArrayLoc'] == 'Center']
+    df_edge = df_sub[df_sub['ArrayLoc'] == 'Edge']
+    ttest = stats.ttest_ind(a=df_center['PercRaft'],
+                            b=df_edge['PercRaft'],
+                            equal_var=True)
+    print(f'{grad}: {ttest}')
+
+#%%
+arrLocs_plot = arrLocs[:-1]
+sig = ['n.s.', 'n.s.', 'n.s.', 'n.s.']
+
+plt.rcdefaults()
+sns.set_theme(style='white', font_scale=1.25)
+plt.rcParams['ytick.left'] = True
+fig, axes = plt.subplots(2, 2, figsize=(8, 6))
+
+for idx, grad in enumerate(grad_labs):
+    row = int(idx / 2)
+    col = idx % 2
+
+    df_sub = df_grad_counts[(df_grad_counts['Grade'] == grad) &
+                            (df_grad_counts['ArrayLoc'] != 'Total')]
+    df_sub.reset_index(drop=True, inplace=True)
+    df_sub_mean = df_grad_means[(df_grad_means['Grade'] == grad) &
+                                (df_grad_means['ArrayLoc'] != 'Total')]
+    df_sub_mean.reset_index(drop=True, inplace=True)
+
+    sns.stripplot(ax=axes[row, col],
+                  x='ArrayLoc',
+                  y='PercRaft',
+                  data=df_sub[df_sub['ArrType'] == 'Fixed'],
+                  hue='Array',
+                  size=10,
+                  alpha=0.75,
+                  marker='o',
+                  jitter=0.3,
+                  palette='viridis',
+                  legend=False,
+                  zorder=1)
+    sns.stripplot(ax=axes[row, col],
+                  x='ArrayLoc',
+                  y='PercRaft',
+                  data=df_sub[df_sub['ArrType'] == 'Live'],
+                  hue='Array',
+                  size=10,
+                  alpha=0.75,
+                  marker='^',
+                  jitter=0.3,
+                  palette='viridis',
+                  legend=False,
+                  zorder=1)
+
+    axes[row, col].errorbar(x=df_sub_mean['ArrayLoc'],
+                            y=df_sub_mean['Mean'],
+                            yerr=df_sub_mean['Stdev'],
+                            fmt='none',
+                            color='black',
+                            capsize=15,
+                            capthick=3,
+                            linewidth=3,
+                            zorder=2)
+    for i, row2 in df_sub_mean.iterrows():
+        axes[row, col].hlines(y=row2['Mean'],
+                              xmin=(i - 0.4),
+                              xmax=(i + 0.4),
+                              colors='black',
+                              linewidth=3,
+                              zorder=3)
+
+    axes[row, col].set_xlabel('')
+    axes[row, col].set_xticks([0, 1],
+                              arrLocs_plot,
+                              fontweight='bold')
+    axes[row, col].set_xlim(-0.5, 1.5)
+    axes[row, col].set_ylabel(f'% {grad}', fontweight='bold')
+    max_ylim = np.max(df_sub['PercRaft'])
+    axes[row, col].set_ylim(0, (max_ylim * 1.22))
+
+    axes[row, col].plot([0, 0, 1, 1],
+                        [max_ylim * 1.07,
+                         max_ylim * 1.1,
+                         max_ylim * 1.1,
+                         max_ylim * 1.07],
+                        linewidth=2,
+                        color='k')
+    if sig[idx] == 'n.s.':
+        height_factor = 1.1
+    else:
+        height_factor = 1.06
+
+    axes[row, col].text((0 + 1) * 0.5,
+                        max_ylim * height_factor,
+                        sig[idx],
+                        ha='center',
+                        va='bottom',
+                        color='k',
+                        fontsize=16
+                        )
+
+plt.tight_layout()
+plt.show()
 
 #%% [markdown]
 # Master template dimensions

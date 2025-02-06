@@ -387,7 +387,7 @@ dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241106_800x8
 df_flatProps = pd.read_csv(dataDir / r'800x800x100um Raft Measurements_Flatness.csv')
 
 arrays = [_ for _ in range(1,4)]
-locs = ['Center', 'Edge']
+locs = ['Center', 'Edge', 'Total']
 rafts = [_ for _ in range(1,6)]
 
 arrs_col = []
@@ -400,8 +400,12 @@ for arr in arrays:
         arrs_col.append(arr)
         locs_col.append(loc)
 
-        df_sub = df_flatProps[(df_flatProps['Array'] == arr) &
-                              (df_flatProps['ArrayLoc'] == loc)]
+        if loc != 'Total':
+            df_sub = df_flatProps[(df_flatProps['Array'] == arr) &
+                                  (df_flatProps['ArrayLoc'] == loc)]
+        else:
+            df_sub = df_flatProps[(df_flatProps['Array'] == arr)]
+
         flatProp = np.mean(df_sub['FlatProp'].tolist())
         flatProps_col.append(flatProp)
         stdev = np.std(df_sub['FlatProp'].tolist())
@@ -420,15 +424,15 @@ stdev_col2 = []
 for loc in locs:
     locs_col2.append(loc)
 
-    df_sub = df_flatProps[df_flatProps['ArrayLoc'] == loc]
-    flatProp = np.mean(df_sub['FlatProp'].tolist())
+    df_sub = df_flatProps_means[df_flatProps_means['ArrayLoc'] == loc]
+    flatProp = np.mean(df_sub['Mean'].tolist())
     flatProps_col2.append(flatProp)
-    stdev = np.std(df_sub['FlatProp'].tolist())
+    stdev = np.std(df_sub['Mean'].tolist())
     stdev_col2.append(stdev)
 
 df_flatProps_means2 = pd.DataFrame({'ArrayLoc': locs_col2,
-                                  'Mean': flatProps_col2,
-                                  'Stdev': stdev_col2})
+                                    'Mean': flatProps_col2,
+                                    'Stdev': stdev_col2})
 
 #%%
 df_flatProps_means.to_csv((dataDir / '800x800x100um Raft Measurements_Flatness_Means.csv'),

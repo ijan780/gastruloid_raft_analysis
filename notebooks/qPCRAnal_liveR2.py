@@ -220,6 +220,8 @@ arrs4 = []
 ploids4 = []
 targets4 = []
 means_relexp = []
+stdevs_relexp = []
+
 for a in arr_set:
     for p in ploid_set:
         for t in plate_set:
@@ -232,10 +234,14 @@ for a in arr_set:
             targets4.append(t)
             mean_relexp = np.mean(df_sub['2^-ddCT'].tolist())
             means_relexp.append(mean_relexp)
+            stdev_relexp = np.std(df_sub['2^-ddCT'].tolist())
+            stdevs_relexp.append(stdev_relexp)
+
 df_mean_relexp = pd.DataFrame({'Arr': arrs4,
                                'Ploid': ploids4,
                                'Target': targets4,
-                               'Mean_RelExp': means_relexp
+                               'Mean_RelExp': means_relexp,
+                               'Stdev_RelExp': stdevs_relexp
                                })
 
 ttest_nog = stats.ttest_ind(a=df_mean_relexp[(df_mean_relexp['Ploid'] == 'Eu')
@@ -253,6 +259,34 @@ print(f'KRT7: {ttest_krt}')
 
 #%%
 df_mean_relexp.to_csv((dataDir / '2024_06_20_NOG&KRT7_RelExp_Mean.csv'),
+                      index=False)
+
+#%%
+ploids5 = []
+targets5 = []
+means_relexp2 = []
+stdevs_relexp2 = []
+
+for p in ploid_set:
+    for t in plate_set:
+        df_sub = df_mean_relexp[(df_mean_relexp['Ploid'] == p)
+                           & (df_mean_relexp['Target'] == t)
+                           ]
+        ploids5.append(p)
+        targets5.append(t)
+        mean_relexp2 = np.mean(df_sub['Mean_RelExp'].tolist())
+        means_relexp2.append(mean_relexp2)
+        stdev_relexp2 = np.std(df_sub['Mean_RelExp'].tolist())
+        stdevs_relexp2.append(stdev_relexp2)
+
+df_mean_relexp2 = pd.DataFrame({'Ploid': ploids5,
+                                'Target': targets5,
+                                'Mean_RelExp': means_relexp2,
+                                'Stdev_RelExp': stdevs_relexp2
+                                })
+
+#%%
+df_mean_relexp2.to_csv((dataDir / '2024_06_20_NOG&KRT7_RelExp_Mean2.csv'),
                       index=False)
 
 #%%

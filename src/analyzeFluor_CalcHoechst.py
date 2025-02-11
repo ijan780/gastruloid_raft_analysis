@@ -47,7 +47,7 @@ def analyzeFluor(exp, flag_finalTP=1):
         radii = [None] * (numRafts * numTP)
 
         fAreas_nuc = [None] * (numRafts * numTP)
-        nucDens = [None] * (numRafts * numTP)
+        NormDNAs = [None] * (numRafts * numTP)
 
         count = 0  # keeps track of data row
 
@@ -120,7 +120,7 @@ def analyzeFluor(exp, flag_finalTP=1):
                             # Apply convex hull as mask to original thresholded Calcein AM image.
                             thresh = np.where(hull, thresh, 0).astype(int)
 
-                            # Determine numObj, nucDen, eccen, and radius.
+                            # Determine numObj, NormDNA, eccen, and radius.
                             numObj = df_measure.shape[0]
                             if numObj == 1:
                                 eccen = df_measure.loc[0]['eccentricity']
@@ -158,11 +158,11 @@ def analyzeFluor(exp, flag_finalTP=1):
                             df_measure = pd.DataFrame(props)
 
                             numObj = df_measure.shape[0]
-                            fArea_nuc = np.sum(thresh > 0)
-                            nucDen = fArea_nuc / fAreas_hull[count]
+                            fArea_DNA = np.sum(thresh > 0)
+                            NormDNA = fArea_DNA / fAreas_hull[count]
 
-                            fAreas_nuc[count] = fArea_nuc
-                            nucDens[count] = nucDen
+                            fAreas_nuc[count] = fArea_DNA
+                            NormDNAs[count] = NormDNA
 
                         numObjs[ch][count] = numObj
 
@@ -184,8 +184,8 @@ def analyzeFluor(exp, flag_finalTP=1):
                                  "Eccen": eccens,
                                  "Radius": radii,
                                  "NumbObj_Blue": numObjs[1],
-                                 "FArea_Nuc": fAreas_nuc,
-                                 "NucDen": nucDens})
+                                 "fArea_DNA": fAreas_nuc,
+                                 "NormDNA": NormDNAs})
 
         df_rafts_raw = df_rafts_raw.sort_values(by=['Time', 'Raft'], ignore_index=True)
 
@@ -197,16 +197,16 @@ def analyzeFluor(exp, flag_finalTP=1):
         df_rafts_filter = df_rafts_raw[(df_rafts_raw['Missing'] == 0)
                                        & (df_rafts_raw['Empty'] == 0)
                                        & (df_rafts_raw['Border'] == 0)]
-        df_rafts_filter['NucDen_Quartile'] = pd.cut(df_rafts_filter['NucDen'], bins=4,
+        df_rafts_filter['NormDNA_Quartile'] = pd.cut(df_rafts_filter['NormDNA'], bins=4,
                                                     labels=['Q1', 'Q2', 'Q3', 'Q4'])
-        df_rafts_filter = df_rafts_filter.sort_values(by=['NucDen'])
+        df_rafts_filter = df_rafts_filter.sort_values(by=['NormDNA'])
         outFile_fAnal = f'array{arr + 1}_FluorAnalysis_CalcHoechst.csv'
         outPath_fAnal = Path(f'{exp.dataPath}_Analysis') / outFile_fAnal
         df_rafts_filter.to_csv(outPath_fAnal, header=True, index=False)
 
-        nucDens_sorted = df_rafts_filter['NucDen']
+        NormDNAs_sorted = df_rafts_filter['NormDNA']
         df_quart = pd.DataFrame({"Quartile": ['Min', '1', '2', '3', 'Max'],
-                                 "Value": quantile(nucDens_sorted, [0, 0.25, 0.5, 0.75, 1])})
+                                 "Value": quantile(NormDNAs_sorted, [0, 0.25, 0.5, 0.75, 1])})
         outFile_quart = f'array{arr + 1}_FluorAnalysis_CalcHoechst_Quart.csv'
         outPath_quart = Path(f'{exp.dataPath}_Analysis') / outFile_quart
         df_quart.to_csv(outPath_quart, header=True, index=False)
@@ -267,7 +267,7 @@ def raft_grad(exp, arr, df_rafts):
 
 if __name__ == '__main__':
     # Run analysis without running raftImageAnalysis_main.py.
-    test = ExpMeta(dir=r'C:\Users\MVX\Documents\2 - Data\240221_RUES2_1.8e6_48hrBMP4_0&100%aneu_2',
+    test = ExpMeta(dir=r'',
                    timeInt=99)  # replace parameters to fit experiment
     test.numArrs = 2
     test.numTimePoints = 1  # including Time Point 0

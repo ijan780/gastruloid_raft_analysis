@@ -47,7 +47,7 @@ def analyzeFluor(exp, flag_finalTP=1):
         numObjs = [[None] * (numRafts * numTP) for i in range(len(channels))]
         threshVals = [[None] * (numRafts * numTP) for i in range(len(channels))]
         fAreas = [[None] * (numRafts * numTP) for i in range(len(channels))]
-        dens = [[None] * (numRafts * numTP) for i in range(len(channels))]
+        normAreas = [[None] * (numRafts * numTP) for i in range(len(channels))]
         eccens = [[None] * (numRafts * numTP) for i in range(len(channels))]
         radii = [[None] * (numRafts * numTP) for i in range(len(channels))]
 
@@ -117,10 +117,10 @@ def analyzeFluor(exp, flag_finalTP=1):
                             # Apply convex hull as mask to original thresholded Hoechst image.
                             thresh = np.where(hull, thresh, 0).astype(int)
 
-                            # Determine numObj, fArea, den, eccen, and radius.
+                            # Determine numObj, fArea, normArea, eccen, and radius.
                             numObj = df_measure.shape[0]
                             fArea = np.sum(thresh > 0)
-                            den = fArea / fAreas_hull[count]
+                            normArea = fArea / fAreas_hull[count]
                             if numObj == 1:
                                 eccen = df_measure.loc[0]['eccentricity']
                                 radius = ((df_measure.loc[0]['axis_major_length'] +
@@ -168,7 +168,7 @@ def analyzeFluor(exp, flag_finalTP=1):
 
                             numObj = df_measure.shape[0]
                             fArea = np.sum(thresh > 0)
-                            den = fArea / fAreas_hull[count]
+                            normArea = fArea / fAreas_hull[count]
                             if numObj != 0:
                                 df_measure = df_measure.sort_values(by='num_pixels', ascending=False, ignore_index=True)
                                 eccen = df_measure.loc[0]['eccentricity']
@@ -191,7 +191,7 @@ def analyzeFluor(exp, flag_finalTP=1):
                         numObjs[ch][count] = numObj
                         threshVals[ch][count] = thresh_val
                         fAreas[ch][count] = fArea
-                        dens[ch][count] = den
+                        normAreas[ch][count] = normArea
                         eccens[ch][count] = eccen
                         radii[ch][count] = radius
 
@@ -219,7 +219,7 @@ def analyzeFluor(exp, flag_finalTP=1):
             df_rafts[f'NumObj_{channels[ch]}'] = numObjs[ch]
             df_rafts[f'ThreshVal_{channels[ch]}'] = threshVals[ch]
             df_rafts[f'FArea_{channels[ch]}'] = fAreas[ch]
-            df_rafts[f'Dens_{channels[ch]}'] = dens[ch]
+            df_rafts[f'NormAreas_{channels[ch]}'] = normAreas[ch]
             df_rafts[f'Eccen_{channels[ch]}'] = eccens[ch]
             df_rafts[f'Radius_{channels[ch]}'] = radii[ch]
 
@@ -307,7 +307,7 @@ def raft_grad(exp, arr, df_rafts):
 
 
 # Run analysis without running raftImageAnalysis_main.py.
-test = ExpMeta(dir=r'C:\Users\MVX\Documents\2 - Data\231019_RUES2_1.8e6_48hrBMP4_0%aneu_3',
+test = ExpMeta(dir=r'',
                timeInt=99)  # replace parameters to fit experiment
 test.numArrs = 1
 test.numTimePoints = 1  # including Time Point 0

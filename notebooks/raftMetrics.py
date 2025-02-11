@@ -11,7 +11,7 @@ df_edges = pd.read_csv(dataDir / r'800x800x100um Raft Measurements_Raw_Edge.csv'
 df_thicks = pd.read_csv(dataDir / r'800x800x100um Raft Measurements_Raw_Thickness.csv')
 
 arrays = [_ for _ in range(1,4)]
-arr_locs = ['Center', 'Edge']
+arr_locs = ['Middle', 'Peripheral']
 raft_locs = ['Center', 'Edge']
 rafts = [_ for _ in range(1,6)]
 
@@ -73,9 +73,9 @@ df_thicks_means = pd.DataFrame({'Array': arrs_thick_col,
                                 'Stdev': stdev_thick_col})
 
 #%%
-df_edges_means.to_csv((dataDir / '800x800x100um Raft Measurements_Mean_Edge.csv'),
+df_edges_means.to_csv((dataDir / '800x800x100um Raft Measurements_MeanEdge.csv'),
                       index=False)
-df_thicks_means.to_csv((dataDir / '800x800x100um Raft Measurements_Mean_Thickness.csv'),
+df_thicks_means.to_csv((dataDir / '800x800x100um Raft Measurements_MeanThickness.csv'),
                        index=False)
 
 #%%
@@ -136,29 +136,29 @@ df_thicks_means2 = pd.DataFrame({'Array': arrs_thick_col2,
                                  'Stdev': stdev_thick_col2})
 
 #%%
-df_edges_means2.to_csv((dataDir / '800x800x100um Raft Measurements_Mean_Edge_Means.csv'),
+df_edges_means2.to_csv((dataDir / '800x800x100um Raft Measurements_MeanEdge_Mean.csv'),
                       index=False)
-df_thicks_means2.to_csv((dataDir / '800x800x100um Raft Measurements_Mean_Thickness_Means.csv'),
+df_thicks_means2.to_csv((dataDir / '800x800x100um Raft Measurements_MeanThickness_Mean.csv'),
                        index=False)
 
 #%%
 import scipy.stats as stats
 
-arrCenters_edge = df_edges_means2[df_edges_means2['ArrayLoc'] == 'Center']['Mean']
-arrEdges_edge = df_edges_means2[df_edges_means2['ArrayLoc'] == 'Edge']['Mean']
+arrCenters_edge = df_edges_means2[df_edges_means2['ArrayLoc'] == 'Middle']['Mean']
+arrEdges_edge = df_edges_means2[df_edges_means2['ArrayLoc'] == 'Peripheral']['Mean']
 ttest_edge = stats.ttest_ind(a=arrCenters_edge, b=arrEdges_edge, equal_var=True)
 print(f'Raft Edges: {ttest_edge}')
 
-center_arrCenters_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Center') &
+center_arrCenters_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Middle') &
                                            (df_thicks_means2['RaftLoc'] == 'Center')]['Mean']
-center_arrEdges_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Edge') &
+center_arrEdges_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Peripheral') &
                                          (df_thicks_means2['RaftLoc'] == 'Center')]['Mean']
 ttest_center_thick = stats.ttest_ind(a=center_arrCenters_thick, b=center_arrEdges_thick, equal_var=True)
 print(f'Raft Center Thickness: {ttest_center_thick}')
 
-edge_arrCenters_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Center') &
+edge_arrCenters_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Middle') &
                                          (df_thicks_means2['RaftLoc'] == 'Edge')]['Mean']
-edge_arrEdges_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Edge') &
+edge_arrEdges_thick = df_thicks_means2[(df_thicks_means2['ArrayLoc'] == 'Peripheral') &
                                        (df_thicks_means2['RaftLoc'] == 'Edge')]['Mean']
 ttest_edge_thick = stats.ttest_ind(a=edge_arrCenters_thick, b=edge_arrEdges_thick, equal_var=True)
 print(f'Raft Edge Thickness: {ttest_edge_thick}')
@@ -206,9 +206,9 @@ df_thicks_means3 = pd.DataFrame({'ArrayLoc': arr_locs_thick_col3,
                                  'Stdev': stdev_thick_col3})
 
 #%%
-df_edges_means3.to_csv((dataDir / '800x800x100um Raft Measurements_Mean_Edge_Means2.csv'),
+df_edges_means3.to_csv((dataDir / '800x800x100um Raft Measurements_MeanEdge_Mean2.csv'),
                       index=False)
-df_thicks_means3.to_csv((dataDir / '800x800x100um Raft Measurements_Mean_Thickness_Means2.csv'),
+df_thicks_means3.to_csv((dataDir / '800x800x100um Raft Measurements_MeanThickness_Mean2.csv'),
                        index=False)
 
 #%%
@@ -387,7 +387,7 @@ dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241106_800x8
 df_flatProps = pd.read_csv(dataDir / r'800x800x100um Raft Measurements_Flatness.csv')
 
 arrays = [_ for _ in range(1,4)]
-locs = ['Center', 'Edge', 'Total']
+locs = ['Middle', 'Peripheral', 'Total']
 rafts = [_ for _ in range(1,6)]
 
 arrs_col = []
@@ -435,16 +435,16 @@ df_flatProps_means2 = pd.DataFrame({'ArrayLoc': locs_col2,
                                     'Stdev': stdev_col2})
 
 #%%
-df_flatProps_means.to_csv((dataDir / '800x800x100um Raft Measurements_Flatness_Means.csv'),
+df_flatProps_means.to_csv((dataDir / '800x800x100um Raft Measurements_Flatness_Mean.csv'),
                          index=False)
-df_flatProps_means2.to_csv((dataDir / '800x800x100um Raft Measurements_Flatness_Means2.csv'),
+df_flatProps_means2.to_csv((dataDir / '800x800x100um Raft Measurements_Flatness_Mean2.csv'),
                           index=False)
 
 #%%
 import scipy.stats as stats
 
-flatProps_center = df_flatProps_means[df_flatProps_means['ArrayLoc'] == 'Center']['Mean']
-flatProps_edge = df_flatProps_means[df_flatProps_means['ArrayLoc'] == 'Edge']['Mean']
+flatProps_center = df_flatProps_means[df_flatProps_means['ArrayLoc'] == 'Middle']['Mean']
+flatProps_edge = df_flatProps_means[df_flatProps_means['ArrayLoc'] == 'Peripheral']['Mean']
 ttest_flatProp = stats.ttest_ind(a=flatProps_edge, b=flatProps_edge, equal_var=True)
 print(f'Raft FlatProp: {ttest_flatProp}')
 
@@ -479,7 +479,7 @@ sns.swarmplot(ax=axes,
               linewidth=2,
               legend=False,
               zorder=2)
-axes.set_xticks([0, 1], locs, fontweight='bold')
+axes.set_xticks([0, 1], locs[:-1], fontweight='bold')
 axes.set_xlabel('', fontweight='bold')
 axes.set_xlim(-0.5, 1.5)
 axes.set_ylabel('Proportion of Flat Microraft Surface', fontweight='bold', fontsize=14)
@@ -533,7 +533,7 @@ rafts_col = []
 raftAreas_col = []
 raftCens_col = []
 beadAreas_col = []
-beadDens_col = []
+normBeads_col = []
 fromEdges_mean_col = []
 fromEdges_stdev_col = []
 
@@ -597,7 +597,10 @@ for arr in arrs:
             for j, lab in enumerate(unique_labels, start=1):
                 raft_count += 1
                 arrs_col.append(arr)
-                locs_col.append(loc)
+                if loc == 'center':
+                    locs_col.append('Middle')
+                elif loc == 'edge':
+                    locs_col.append('Peripheral')
                 rafts_col.append(raft_count)
 
                 # Raft area & centroid.
@@ -621,8 +624,8 @@ for arr in arrs:
                 # Bead area & density.
                 beadArea = np.sum(img_tx_masked)
                 beadAreas_col.append(beadArea)
-                beadDens = beadArea / raftArea
-                beadDens_col.append(beadDens)
+                normBead = beadArea / raftArea
+                normBeads_col.append(normBead)
 
                 # Bead distribution.
 
@@ -655,7 +658,7 @@ df_beads = pd.DataFrame({'Array': arrs_col,
                          'RaftArea': raftAreas_col,
                          'RaftCen': raftCens_col,
                          'BeadArea': beadAreas_col,
-                         'BeadDens': beadDens_col,
+                         'NormBead': normBeads_col,
                          'FromEdge_Mean': fromEdges_mean_col,
                          'FromEdge_Stdev': fromEdges_stdev_col
                          })
@@ -667,54 +670,56 @@ df_beads.to_csv((dataDir / 'Bead Distribution.csv'),
 arrs_col2 = []
 locs_col2 = []
 rafts_col2 = []
-beadDens_mean_col2 = []
-beadDens_stdev_col2 = []
+normBeads_mean_col2 = []
+normBeads_stdev_col2 = []
 fromEdges_mean2_col2 = []
 fromEdges_stdev2_col2 = []
 
+locs_lab = ['Middle', 'Peripheral']
+
 for arr in arrs:
-    for loc in locs:
+    for loc in locs_lab:
         df_sub = df_beads[(df_beads['Array'] == arr) &
                           (df_beads['Location'] == loc)
                           ]
-        beadDens_mean = np.mean(df_sub['BeadDens'].tolist())
-        beadDens_stdev = np.std(df_sub['BeadDens'].tolist())
+        normBead_mean = np.mean(df_sub['NormBead'].tolist())
+        normBead_stdev = np.std(df_sub['NormBead'].tolist())
         fromEdge_mean2 = np.mean(df_sub['FromEdge_Mean'].tolist())
         fromEdge_stdev2 = np.std(df_sub['FromEdge_Mean'].tolist())
 
         arrs_col2.append(arr)
         locs_col2.append(loc)
-        beadDens_mean_col2.append(beadDens_mean)
-        beadDens_stdev_col2.append(beadDens_stdev)
+        normBeads_mean_col2.append(normBead_mean)
+        normBeads_stdev_col2.append(normBead_stdev)
         fromEdges_mean2_col2.append(fromEdge_mean2)
         fromEdges_stdev2_col2.append(fromEdge_stdev2)
 
 df_beads_mean = pd.DataFrame({'Array': arrs_col2,
                               'Location': locs_col2,
-                              'BeadDens_Mean': beadDens_mean_col2,
-                              'BeadDens_Stdev': beadDens_stdev_col2,
+                              'NormBeads_Mean': normBeads_mean_col2,
+                              'NormBeads_Stdev': normBeads_stdev_col2,
                               'FromEdge_Mean': fromEdges_mean2_col2,
                               'FromEdge_Stdev': fromEdges_stdev2_col2
                               })
 
-df_beads_mean.to_csv((dataDir / 'Bead Distribution_Means.csv'),
+df_beads_mean.to_csv((dataDir / 'Bead Distribution_Mean.csv'),
                 index=False)
 
 #%%
 dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\DIC\3. 800x800x100um\241029_Beads_Compiled')
 df_beads = pd.read_csv(dataDir / 'Bead Distribution.csv')
-df_beads_mean = pd.read_csv(dataDir / 'Bead Distribution_Means.csv')
+df_beads_mean = pd.read_csv(dataDir / 'Bead Distribution_Mean.csv')
 
 #%%
 import scipy.stats as stats
 
-df_center = df_beads_mean[(df_beads_mean['Location'] == 'center')]
-df_edge = df_beads_mean[(df_beads_mean['Location'] == 'edge')]
+df_center = df_beads_mean[(df_beads_mean['Location'] == 'Middle')]
+df_edge = df_beads_mean[(df_beads_mean['Location'] == 'Peripheral')]
 
-ttest_beadDens = stats.ttest_ind(a=df_center['BeadDens_Mean'],
-                                 b=df_edge['BeadDens_Mean'],
+ttest_normBead = stats.ttest_ind(a=df_center['NormBeads_Mean'],
+                                 b=df_edge['NormBeads_Mean'],
                                  equal_var=True)
-print(f'Bead Area Dens: {ttest_beadDens}')
+print(f'Bead Area Dens: {ttest_normBead}')
 
 ttest_fromEdge = stats.ttest_ind(a=df_center['FromEdge_Mean'],
                                  b=df_edge['FromEdge_Mean'],
@@ -731,7 +736,7 @@ fig, axes = plt.subplots(1, 2, figsize=(10, 4))
 
 sns.stripplot(ax=axes[0],
               x='Location',
-              y='BeadDens',
+              y='NormBead',
               data = df_beads,
               hue='Array',
               size=10,
@@ -742,7 +747,7 @@ sns.stripplot(ax=axes[0],
               zorder=1)
 sns.swarmplot(ax=axes[0],
               x='Location',
-              y='BeadDens_Mean',
+              y='NormBeads_Mean',
               data=df_beads_mean,
               hue='Array',
               size=15,
@@ -751,11 +756,11 @@ sns.swarmplot(ax=axes[0],
               linewidth=2,
               legend=False,
               zorder=2)
-axes[0].set_xticks([0, 1], ['Center', 'Edge'], fontweight='bold')
+axes[0].set_xticks([0, 1], locs_lab, fontweight='bold')
 axes[0].set_xlabel('', fontweight='bold')
 axes[0].set_xlim(-0.5,1.5)
-axes[0].set_ylabel('Bead Density', fontweight='bold')
-minMax = [min(df_beads['BeadDens']), max(df_beads['BeadDens'])]
+axes[0].set_ylabel('Normalized Bead Area', fontweight='bold')
+minMax = [min(df_beads['NormBead']), max(df_beads['NormBead'])]
 axes[0].set_ylim(minMax[0] * 0.9,
                  minMax[1] * 1.12)
 axes[0].yaxis.set_major_locator(plt.MaxNLocator(nbins=4))
@@ -797,7 +802,7 @@ sns.swarmplot(ax=axes[1],
               linewidth=2,
               legend=False,
               zorder=2)
-axes[1].set_xticks([0, 1], ['Center', 'Edge'], fontweight='bold')
+axes[1].set_xticks([0, 1], locs_lab, fontweight='bold')
 axes[1].set_xlabel('', fontweight='bold')
 axes[1].set_xlim(-0.5, 1.5)
 axes[1].set_ylabel('Distance from Edge (μm)', fontweight='bold')
@@ -841,7 +846,7 @@ dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Confocal\241213_Array
 
 #%%
 arrays = [_ for _ in range(1, 4)]
-arrLocs = ['Center', 'Edge', 'Total']
+arrLocs = ['Middle', 'Peripheral', 'Total']
 numCenRafts = (23 - (2 * 2)) ** 2
 grads = ['Centered', 'Missing', 'Border']
 
@@ -854,9 +859,9 @@ percRafts = []
 
 for idx, arrLoc in enumerate(arrLocs_col):
     count = counts_col[idx]
-    if arrLoc == 'Center':
+    if arrLoc == 'Middle':
         percRafts.append(count / numCenRafts * 100)
-    elif arrLoc == 'Edge':
+    elif arrLoc == 'Peripheral':
         percRafts.append(count / (23**2 - numCenRafts) * 100)
     elif arrLoc == 'Total':
         percRafts.append(count / 23**2 * 100)
@@ -941,8 +946,8 @@ plt.show()
 #%%
 for grad in grads:
     df_sub = df_counts[df_counts['Grade'] == grad]
-    df_center = df_sub[df_sub['ArrayLoc'] == 'Center']
-    df_edge = df_sub[df_sub['ArrayLoc'] == 'Edge']
+    df_center = df_sub[df_sub['ArrayLoc'] == 'Middle']
+    df_edge = df_sub[df_sub['ArrayLoc'] == 'Peripheral']
     ttest = stats.ttest_ind(a=df_center['PercRaft'],
                             b=df_edge['PercRaft'],
                             equal_var=True)
@@ -1049,7 +1054,7 @@ plt.show()
 df_diams = pd.read_csv(dataDir / 'Pattern Diameter.csv')
 
 arrays = [_ for _ in range(1,4)]
-arrLocs = ['Center', 'Edge']
+arrLocs = ['Middle', 'Peripheral']
 
 #%%
 arrays_col2 = []
@@ -1103,8 +1108,8 @@ df_diams_means2.to_csv((dataDir / 'Pattern Diameter_Mean2.csv'),
 #%%
 import scipy.stats as stats
 
-df_diam_center = df_diams_means[(df_diams_means['ArrayLoc'] == 'Center')]
-df_diam_edge = df_diams_means[(df_diams_means['ArrayLoc'] == 'Edge')]
+df_diam_center = df_diams_means[(df_diams_means['ArrayLoc'] == 'Middle')]
+df_diam_edge = df_diams_means[(df_diams_means['ArrayLoc'] == 'Peripheral')]
 
 ttest_diam = stats.ttest_ind(a=df_diam_center['Mean'],
                              b=df_diam_edge['Mean'],
@@ -1188,7 +1193,7 @@ plt.show()
 df_fromCen = pd.read_csv(dataDir / 'Pattern From Center.csv')
 
 arrays = [_ for _ in range(1, 4)]
-arrLocs = ['Center', 'Edge']
+arrLocs = ['Middle', 'Peripheral']
 patterns = [_ for _ in range(1,9)]
 
 #%%
@@ -1351,7 +1356,7 @@ for dir in dataDirs:
 #%%
 grads = ['Pass', 'Excl_missing', 'Excl_empty', 'Excl_border']
 grad_labs = ['Centered', 'Missing', 'Empty', 'Border']
-arrLocs = ['Center', 'Edge', 'Total']
+arrLocs = ['Middle', 'Peripheral', 'Total']
 
 cenRafts = []
 for r in range(2, 21):
@@ -1410,9 +1415,9 @@ for idx, arrLoc in enumerate(arrLocs_col):
     percRaft = 0
     if arrLoc == 'Total':
         percRaft = counts_col[idx] / 23**2
-    elif arrLoc == 'Center':
+    elif arrLoc == 'Middle':
         percRaft = counts_col[idx] / len(cenRafts)
-    elif arrLoc == 'Edge':
+    elif arrLoc == 'Peripheral':
         percRaft = counts_col[idx] / (23**2 - len(cenRafts))
     percRafts_col.append(percRaft * 100)
 
@@ -1520,8 +1525,8 @@ import scipy.stats as stats
 
 for grad in grad_labs:
     df_sub = df_grad_counts[df_grad_counts['Grade'] == grad]
-    df_center = df_sub[df_sub['ArrayLoc'] == 'Center']
-    df_edge = df_sub[df_sub['ArrayLoc'] == 'Edge']
+    df_center = df_sub[df_sub['ArrayLoc'] == 'Middle']
+    df_edge = df_sub[df_sub['ArrayLoc'] == 'Peripheral']
     ttest = stats.ttest_ind(a=df_center['PercRaft'],
                             b=df_edge['PercRaft'],
                             equal_var=True)

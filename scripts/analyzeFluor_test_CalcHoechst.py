@@ -12,10 +12,26 @@ from skimage.measure import label, regionprops, regionprops_table
 from skimage.color import label2rgb
 from PIL import Image
 
+data_dirs = [Path(r'C:\Users\MVX\Documents\2 - Data\Analysis\240221_RUES2_1.8e6_48hrBMP4_0&100%aneu_2_Analysis'),
+             Path(r'C:\Users\MVX\Documents\2 - Data\Analysis\240424_RUES2_1.8e6_48hrBMP4_0&100%aneu_3_Analysis'),
+             Path(r'C:\Users\MVX\Documents\2 - Data\Analysis\240501_RUES2_1.8e6_48hrBMP4_0&100%aneu_4_Analysis'),
+             Path(r'C:\Users\MVX\Documents\2 - Data\Analysis\240605_RUES2_1.8e6_48hrBMP4_0&100%aneu_5_Analysis'),
+             Path(r'C:\Users\MVX\Documents\2 - Data\Analysis\240612_RUES2_1.8e6_48hrBMP4_0&100%aneu_6_Analysis'),
+             Path(r'C:\Users\MVX\Documents\2 - Data\Analysis\240619_RUES2_1.8e6_48hrBMP4_0&100%aneu_7_Analysis')
+             ]
 
-main_dir = Path(r'C:\Users\MVX\Documents\2 - Data\Analysis\240612_RUES2_1.8e6_48hrBMP4_0&100%aneu_6_Analysis\Individual Raft Images')
-arr = '2'
-raft = '023'
+export_arr = '6'
+ploidy = 'An'
+raft = '218'
+
+main_dir = data_dirs[int(export_arr) - 1] / 'Individual Raft Images'
+if ploidy == 'Eu':
+    arr = '1'
+elif ploidy == 'An':
+    arr = '2'
+
+export_dir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1\Figures\Sample Eu & Aneu Gastruloids')
+export_nucDen = '0.941'
 
 channels = ['Green', 'Blue']
 masks = []
@@ -72,8 +88,8 @@ for ch in channels:
             break
 
         thresh = image > thresh_value
-        io.imshow(thresh)
-        plt.show()
+        # io.imshow(thresh)
+        # plt.show()
         img = Image.fromarray(thresh)
         # img = img.save(r'C:\Users\MVX\Desktop\Green02.png')
 
@@ -96,8 +112,8 @@ for ch in channels:
 
         hull = morphology.convex_hull_image(hull)
         masks.append(hull)
-        # io.imshow(hull)
-        # plt.show
+        io.imshow(hull)
+        plt.show
         img = Image.fromarray(hull)
         # img = img.save(r'C:\Users\MVX\Desktop\Green04.png')
 
@@ -158,6 +174,7 @@ for ch in channels:
         # io.imshow(image_norm)
         # plt.show()
         img = Image.fromarray(image_norm)
+        img = img.save(export_dir / f'{ploidy}_{export_nucDen}_Arr{export_arr}_{raft:03}_Hoechst.png')
         # img = img.save(r'C:\Users\MVX\Desktop\Blue01.png')
 
         # Create binary mask.
@@ -171,7 +188,10 @@ for ch in channels:
         #  Apply convex hull as mask to thresholded image.
         thresh = np.where(masks[0], thresh, 0).astype(int)
         masks.append(thresh)
+        # io.imshow(thresh)
+        # plt.show()
         img = Image.fromarray(thresh > 0)
+        img = img.save(export_dir / f'{ploidy}_{export_nucDen}_Arr{export_arr}_{raft:03}_Mask.png')
         # img = img.save(r'C:\Users\MVX\Desktop\Blue03.png')
 
         # Measure thresholded image.

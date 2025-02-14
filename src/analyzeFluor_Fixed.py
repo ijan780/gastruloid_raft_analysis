@@ -2,10 +2,9 @@
 
 from pathlib import Path
 import os
-from expMeta import ExpMeta
+from expMeta_EGOMRA import ExpMeta
 import itertools
 
-import math
 import pandas as pd
 import numpy as np
 from skimage import io

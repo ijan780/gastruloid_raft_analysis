@@ -46,11 +46,15 @@ for array in arrays:
                                      for rad in df_fluor_filter['Radius'].tolist()]
 
         df_fluor_melt = df_fluor_filter.melt(id_vars=['Array', 'Ploidy', 'Raft'],
-                                         value_vars=fts)
+                                             value_vars=fts)
 
         df_fluors = pd.concat([df_fluors, df_fluor_melt],
                                axis=0,
                                ignore_index=True)
+
+#%%
+df_fluors.to_csv((dataDir.parent / 'Eu & Aneu Gastruloid Fluor Analysis_Merge.csv'),
+                 index=False)
 
 #%%
 arrs_col2 = []

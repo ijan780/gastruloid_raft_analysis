@@ -3,7 +3,7 @@
 
 from pathlib import Path
 import os
-from expMeta import ExpMeta
+from expMeta_EGOMRA import ExpMeta
 import itertools
 
 import pandas as pd

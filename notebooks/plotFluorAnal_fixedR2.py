@@ -60,6 +60,10 @@ for array in arrays:
                           ignore_index=True)
 
 #%%
+df_fluors.to_csv((dataDir.parent / 'Fixed Gastruloid Fluor Analysis_Merge.csv'),
+                 index=False)
+
+#%%
 arrs_col2 = []
 counts_col2 = []
 var_names_col2 = []

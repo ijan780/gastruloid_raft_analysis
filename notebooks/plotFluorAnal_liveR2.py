@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import scipy.stats as stats
 
 #%%
-dataDir =  Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1\Data\Eu & Aneu Gastruloid Fluor Analysis')
+dataDir =  Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 1\Data\Living Gastruloid Fluor Analysis')
 os.chdir(dataDir)
 
 arrays = [_ for _ in range(1, 7)]
@@ -53,7 +53,7 @@ for array in arrays:
                                ignore_index=True)
 
 #%%
-df_fluors.to_csv((dataDir.parent / 'Eu & Aneu Gastruloid Fluor Analysis_Merge.csv'),
+df_fluors.to_csv((dataDir.parent / 'Living Gastruloid Fluor Analysis_Merge.csv'),
                  index=False)
 
 #%%
@@ -93,10 +93,10 @@ df_means_eu = df_means[df_means['Ploidy'] == 'Euploid']
 df_means_an = df_means[df_means['Ploidy'] == 'Aneuploid']
 df_means_list = [df_means_eu, df_means_an]
 
-ttest_nucDen = stats.ttest_ind(a=df_means_eu[df_means_eu['Feat'] == 'NormDNA']['Mean'],
+ttest_normDNA = stats.ttest_ind(a=df_means_eu[df_means_eu['Feat'] == 'NormDNA']['Mean'],
                                b=df_means_an[df_means_an['Feat'] == 'NormDNA']['Mean'],
                                equal_var=True)
-print(f'NucDen: {ttest_nucDen}')
+print(f'NucDen: {ttest_normDNA}')
 
 ttest_hull = stats.ttest_ind(a=df_means_eu[df_means_eu['Feat'] == 'FArea_Hull']['Mean'],
                                b=df_means_an[df_means_an['Feat'] == 'FArea_Hull']['Mean'],
@@ -107,6 +107,8 @@ print(f'Hull: {ttest_hull}')
 ploids_col3 = []
 feats_col3 = []
 means_col3 = []
+stdevs_col3 = []
+sampSizes_col3 = []
 sems_col3 = []
 
 for idx, ploid in enumerate(ploid_labs):
@@ -116,7 +118,9 @@ for idx, ploid in enumerate(ploid_labs):
 
         # print(df_means_ft['Mean'].tolist())
         mean = np.mean(df_means_ft['Mean'].tolist())
-        sem = np.std(df_means_ft['Mean'].tolist()) / np.sqrt(len(df_means_ft['Mean'].tolist()))
+        stdev = np.std(df_means_ft['Mean'].tolist())
+        sampSize = len(df_means_ft['Mean'].tolist())
+        sem = stdev / sampSize
 
         # means = np.array(df_means_ft['Mean'].tolist())
         # sampSizes = np.array(df_means_ft['Count'].tolist())
@@ -130,11 +134,15 @@ for idx, ploid in enumerate(ploid_labs):
         ploids_col3.append(ploid)
         feats_col3.append(ft)
         means_col3.append(mean)
+        stdevs_col3.append(stdev)
+        sampSizes_col3.append(sampSize)
         sems_col3.append(sem)
 
 df_means2 = pd.DataFrame({'Ploidy': ploids_col3,
                           'Feat': feats_col3,
                           'Mean': means_col3,
+                          'Stdev': stdevs_col3,
+                          'SampSize': sampSizes_col3,
                           'SEM': sems_col3})
 
 #%%
@@ -144,12 +152,12 @@ df_means2.to_csv((dataDir.parent / 'Eu & Aneu Gastruloid Fluor Analysis_Mean2.cs
                 index=False)
 
 #%%
-df_fluors_nucDen = df_fluors[df_fluors['variable'] == 'NormDNA']
-df_fluors_nucDen.reset_index(drop=True, inplace=True)
-df_means_nucDen = df_means[df_means['Feat'] == 'NormDNA']
-df_means_nucDen.reset_index(drop=True, inplace=True)
-df_means2_nucDen = df_means2[df_means2['Feat'] == 'NormDNA']
-df_means2_nucDen.reset_index(drop=True, inplace=True)
+df_fluors_normDNA = df_fluors[df_fluors['variable'] == 'NormDNA']
+df_fluors_normDNA.reset_index(drop=True, inplace=True)
+df_means_normDNA = df_means[df_means['Feat'] == 'NormDNA']
+df_means_normDNA.reset_index(drop=True, inplace=True)
+df_means2_normDNA = df_means2[df_means2['Feat'] == 'NormDNA']
+df_means2_normDNA.reset_index(drop=True, inplace=True)
 
 plt.rcdefaults()
 sns.set_theme(style='white', font_scale=1.25)
@@ -158,7 +166,7 @@ fig, axes = plt.subplots(1, 1, figsize=(5, 8))
 
 sns.stripplot(x='Ploidy',
               y='value',
-              data = df_fluors_nucDen,
+              data = df_fluors_normDNA,
               hue='Array',
               size=3,
               alpha=0.25,
@@ -168,7 +176,7 @@ sns.stripplot(x='Ploidy',
               zorder=1)
 sns.swarmplot(x='Ploidy',
               y='Mean',
-              data=df_means_nucDen,
+              data=df_means_normDNA,
               hue='Array',
               size=15,
               palette='colorblind',
@@ -176,16 +184,16 @@ sns.swarmplot(x='Ploidy',
               linewidth=2,
               legend=False,
               zorder=3)
-axes.errorbar(x=df_means2_nucDen['Ploidy'],
-             y=df_means2_nucDen['Mean'],
-             yerr=df_means2_nucDen['SEM'],
+axes.errorbar(x=df_means2_normDNA['Ploidy'],
+             y=df_means2_normDNA['Mean'],
+             yerr=df_means2_normDNA['SEM'],
              fmt='none',
              color='black',
              capsize=20,
              capthick=3,
              linewidth=3,
              zorder=2)
-for i, row in df_means2_nucDen.iterrows():
+for i, row in df_means2_normDNA.iterrows():
     axes.hlines(y=row['Mean'],
                xmin= (i - 0.45),
                xmax= (i + 0.45),
@@ -194,14 +202,14 @@ for i, row in df_means2_nucDen.iterrows():
                zorder=2)
 
 plt.plot([0, 0, 1, 1],
-         [max(df_fluors_nucDen['value'])+0.01,
-          max(df_fluors_nucDen['value'])+0.02,
-          max(df_fluors_nucDen['value'])+0.02,
-          max(df_fluors_nucDen['value'])+0.01],
+         [max(df_fluors_normDNA['value'])+0.01,
+          max(df_fluors_normDNA['value'])+0.02,
+          max(df_fluors_normDNA['value'])+0.02,
+          max(df_fluors_normDNA['value'])+0.01],
          linewidth=2,
          color='k')
 plt.text((0+1)*.5,
-         max(df_fluors_nucDen['value'])+0.003,
+         max(df_fluors_normDNA['value'])+0.003,
          "***",
          ha='center',
          va='bottom',

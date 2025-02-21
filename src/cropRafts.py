@@ -88,24 +88,25 @@ def cropRafts(exp):
                          imagej=True, metadata={'axes': 'CYX',
                                                 'channels': [rep_and_stain[f'end_{ch}'] for ch in ch_end]})
 
-            # Crop raft at each time point for all time-lapse channels then stack into single TIFF as (tp, c, y, x).
-            crop_tp = []
-            for tp in range(exp.numTimePoints):
-                img_row, img_col, loc_idx = getLocIdx(loc_cell2, arr, tp, raft)
-                crop_ch = []
-                for ch in ch_tl:
-                    raftCrop = crop(exp, exp.dataDir,
-                                    img_row, img_col, loc_idx,
-                                    centroid_cell,
-                                    arr, tp, ch)
-                    crop_ch.append(raftCrop)
-                stacked_ch = np.stack(crop_ch, axis=0)
-                crop_tp.append(stacked_ch)
-            tl_img = np.stack(crop_tp, axis=0)
-            outPath_tl_raft = outDir_tl / f'array{arr + 1}_raft{(raft + 1):03}_tl.tif'
-            tiff.imwrite(outPath_tl_raft, tl_img,
-                         imagej=True, metadata={'axes': 'TCYX',
-                                                'channels': [rep_and_stain[f'tl_{ch}'] for ch in ch_tl]})
+            if exp.numTimePoints > 1:
+                # Crop raft at each time point for all time-lapse channels then stack into single TIFF as (tp, c, y, x).
+                crop_tp = []
+                for tp in range(exp.numTimePoints):
+                    img_row, img_col, loc_idx = getLocIdx(loc_cell2, arr, tp, raft)
+                    crop_ch = []
+                    for ch in ch_tl:
+                        raftCrop = crop(exp, exp.dataDir,
+                                        img_row, img_col, loc_idx,
+                                        centroid_cell,
+                                        arr, tp, ch)
+                        crop_ch.append(raftCrop)
+                    stacked_ch = np.stack(crop_ch, axis=0)
+                    crop_tp.append(stacked_ch)
+                tl_img = np.stack(crop_tp, axis=0)
+                outPath_tl_raft = outDir_tl / f'array{arr + 1}_raft{(raft + 1):03}_tl.tif'
+                tiff.imwrite(outPath_tl_raft, tl_img,
+                             imagej=True, metadata={'axes': 'TCYX',
+                                                    'channels': [rep_and_stain[f'tl_{ch}'] for ch in ch_tl]})
 
         pbar.close()
         print(f'\t(Array {arr + 1}) Cropped {raftCount} rafts')

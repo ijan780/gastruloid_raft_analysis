@@ -9,33 +9,41 @@ class ExpMeta(object):
     def __init__(self,
                  dataDir: str,
                  channel_mask: str,
-                 channels_tl: list,
-                 timeInt: float,
-                 endDirSame = True,
-                 timeOffset: float = 0.0,
+                 channels_tl=[],
+                 endDirSame=True
                  ):
         # Fairly consistent variables
         self.arrDim = [800, 100, 23]  # [side dimensions, gap spacing, # rafts in single row]
-        # self.mag = 2.5
-        # self.pxSize = 1.3163  # um/px (for 2.5X magnification)
+
+        # Pixel_Sizes = [5.1587 4.0625 3.2244 2.6558 2.068 1.6535 1.3163 1.0257 0.8203 0.6522 0.5247]
+        self.dict_pxSize_2x = {1.26: 5.1587,
+                               1.6: 4.0625,
+                               2: 3.2244,
+                               2.5: 2.6558,
+                               3.2: 2.068,
+                               4: 1.6535,
+                               5: 1.3163,
+                               6.4: 1.0257,
+                               8: 0.8203,
+                               10: 0.6522,
+                               12.6: 0.5247
+                               }  # pxSizes (um/px) for 2x objective across magnifications
         self.mag = 3.2
-        self.pxSize = 1.0257  # um/px (for 3.2X magnification)
+        self.pxSize = self.dict_pxSize_2x[self.mag]
 
         # Variables that change for each experiment
         self.set_dataDir(dataDir)
-        self.set_endDir(endDirSame)
         self.analDir = Path(f'{self.dataDir}_Analysis')
         self.analDir.mkdir(exist_ok=True)
 
         self.pattern = '{timePoint}_{channel}.tif'
         firstFolder = self.find_firstFolder(dataDir)
         self.set_numArrs()
-        self.set_numTimePoints(firstFolder)
+        self.set_time(firstFolder)
 
-        self.set_interval(timeInt)
-        self.set_timeOffset(timeOffset)
-
-        self.channels_abb = {'BF': 'BF',
+        self.channels_abb = {'na': None,
+                             'all': 'all',
+                             'BF': 'BF',
                              'bf': 'BF',
                              'Blue': 'Blue',
                              'b': 'Blue',
@@ -50,11 +58,33 @@ class ExpMeta(object):
         self.reporters_and_stains = {'tl_BF': 'BF',
                                      'tl_Violet': 'BRA',
                                      'tl_Green': 'SOX2',
-                                     'tl_Red': 'SOX17'}
+                                     'tl_Red': 'SOX17',
+                                     'end_BF': 'BF',
+                                     }
         self.channel_mask = self.channels_abb[channel_mask]
+
+        while self.channel_mask is not None:
+            endDirSame = input('Is the mask folder the same as the data folder? (y/n): ')
+            if endDirSame.lower() == 'y':
+                endDirSame = True
+                break
+            elif endDirSame.lower() == 'n':
+                endDirSame = False
+                break
+            else:
+                continue
+        self.set_endDir(endDirSame)
+
         channels_main = self.find_channels(firstFolder) # channels in dataDir
+        if self.numTimePoints > 1:
+            channels_tl = input('Enter reporter channels separated by spaces (all, b, v, g, r, fr): ')
+            channels_tl = channels_tl.split()
         self.set_channels(channels_main, channels_tl, endDirSame)
         print(f'Channels ({len(self.channels)} total): {self.channels}')
+        print()
+
+        if self.channels_end:
+            self.set_endStains()
 
         # Variables that modify behavior of image analysis
         self.tileScale = 0.1
@@ -66,10 +96,10 @@ class ExpMeta(object):
         self.dataDir = Path(dataDir)
 
     def set_endDir(self, endDirSame):
-        if endDirSame:
+        if (endDirSame) or (self.channel_mask == None):
             self.endDir = self.dataDir
         else:
-            self.endDir = Path(f'{self.dataDir}_Calcein') # TODO edit to _End
+            self.endDir = Path(f'{self.dataDir}_End')
 
     def find_firstFolder(self, dir):
         return Path(dir) / '1' / '1x1'  # folder for first subsection.
@@ -78,11 +108,21 @@ class ExpMeta(object):
         self.numArrs = len(os.listdir(self.dataDir)) - 1  # account for "data" subfolder
         print(f'Number of arrays: {self.numArrs}')
     
-    def set_numTimePoints(self, firstFolder):
+    def set_time(self, firstFolder):
         lastImg = os.listdir(firstFolder)[-1]  # last image in folder for first subsection
         patternResult = parse(self.pattern, lastImg)
         self.numTimePoints = int(patternResult['timePoint']) + 1
         print(f'Number of time points: {self.numTimePoints}')
+
+        if self.numTimePoints == 1:
+            interval = 99.0
+            timeOffset = 0.0
+        else:
+            interval = float(input('Enter duration of time interval (hr): '))
+            timeOffset = float(input('Enter time offset (hr): '))
+
+        self.set_interval(interval)
+        self.set_timeOffset(timeOffset)
 
     # Ensure that time interval input is positive.
     def set_interval(self, timeInt):
@@ -108,18 +148,14 @@ class ExpMeta(object):
 
     def set_channels(self, channels_main, channels_tl, endDirSame):
         # channels_tl refers to reporter channels + BF.
-        if (self.numTimePoints == 1) or channels_tl[0] == 'none':
-            self.channels_tl = []
+        if self.numTimePoints == 1:
             self.channels_end = channels_main
-        elif channels_tl[0] == 'all':
-            self.channels_tl = channels_main
+            self.channels_tl = []
+        elif 'all' in channels_tl:
             self.channels_end = []
+            self.channels_tl = channels_main
         else:
-            if 'BF' in channels_tl:
-                self.channels_tl = [self.channels_abb[ch] for ch in channels_tl]
-            else:
-                self.channels_tl = ['BF'] + [self.channels_abb[ch] for ch in channels_tl]
-
+            self.channels_tl = ['BF'] + [self.channels_abb[ch] for ch in channels_tl]
             if endDirSame:
                 channels_end = [ch for ch in channels_main if ch not in self.channels_tl]
             else:
@@ -130,11 +166,11 @@ class ExpMeta(object):
         self.channels = self.channels_tl + self.channels_end
 
     def set_endStains(self):
-        self.reporters_and_stains[f'end_{self.channel_mask}'] = 'Hull'
-        for ch in [ch for ch in self.channels_end if ch != self.channel_mask]:
+        if self.channel_mask is not None:
+            self.reporters_and_stains[f'end_{self.channel_mask}'] = 'Hull'
+        for ch in [ch for ch in self.channels_end if (ch not in ['BF', self.channel_mask])]:
             stain = input(f'Stain that the following endpoint channel [{ch}] refers to: ')
             self.reporters_and_stains[f'end_{ch}'] = stain
-        print(self.reporters_and_stains)
 
     def write_metadata(self):
         totalDuration = (self.interval * (self.numTimePoints - 1))

@@ -20,36 +20,17 @@ while True:
         print('CREATING EXPERIMENT...')
         # Request user input for data folder absolute path, mask path (same or different), mask channel, time intervals, and reporter channels.
         dataDir = input('Enter data folder absolute path: ')
-        while True:
-            endDirSame = input('Is the mask folder the same as the data folder? (y/n): ')
-            if endDirSame.lower() == 'y':
-                endDirSame = True
-                break
-            elif endDirSame.lower() == 'n':
-                endDirSame = False
-                break
-            else:
-                continue
-        channel_mask = input('Enter channel for mask (b, v, g, r, fr): ')
-        interval = float(input('Enter duration of time interval (hr): '))
-        timeOffset = float(input('Enter time offset (hr): '))
-        channels_tl = input('Enter reporter channels separated by spaces (all, none, b, v, g, r, fr): ')
-        channels_tl = channels_tl.split()
+        channel_mask = input('Enter channel for mask (na, b, v, g, r, fr): ')
         print()
 
         # Create experiment metadata object.
         currExp = ExpMeta(dataDir=dataDir,
-                          channel_mask=channel_mask,
-                          channels_tl=channels_tl,
-                          timeInt=interval,
-                          endDirSame=endDirSame,
-                          timeOffset=timeOffset)
+                          channel_mask=channel_mask)
 
         print(f'Channel mask: {currExp.channel_mask}')
         print(f'Channels time-series ({len(currExp.channels_tl)} total): {currExp.channels_tl}')
         print(f'Channels endpoint ({len(currExp.channels_end)} total): {currExp.channels_end}')
-        print()
-        currExp.set_endStains()
+        print(currExp.reporters_and_stains)
         print()
 
         # Print out metadata.
@@ -69,9 +50,9 @@ print('NOW CROPPING TO RAFTS...')
 cropRafts(currExp)
 print()
 
-# Performs fluorescence analysis.
-print('NOW PERFORMING FLUORESCENCE ANALYSIS')
-analyzeFluor(currExp)
-print()
+# # Performs fluorescence analysis.
+# print('NOW PERFORMING FLUORESCENCE ANALYSIS')
+# analyzeFluor(currExp)
+# print()
 
 print('PROCESSING COMPLETE.')

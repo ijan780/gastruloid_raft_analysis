@@ -25,11 +25,12 @@ def cropRafts(exp):
     else:
         endTP = 0
 
-    # Load Loc_cell.mat (links local/global indices) and Centroid_cell.mat (raft px location within subsection) for endpoint.
-    loc_cell2_end = loadmat(exp.endDir / 'data' / 'Loc_cell2.mat')
-    loc_cell2_end = loc_cell2_end['Loc_cell2']
-    centroid_cell_end = loadmat(exp.endDir / 'data' / 'Centroid_cell.mat')
-    centroid_cell_end = centroid_cell_end['Centroid_cell']
+    if not endDirSame:
+        # Load Loc_cell.mat (links local/global indices) and Centroid_cell.mat (raft px location within subsection) for endpoint.
+        loc_cell2_end = loadmat(exp.endDir / 'data' / 'Loc_cell2.mat')
+        loc_cell2_end = loc_cell2_end['Loc_cell2']
+        centroid_cell_end = loadmat(exp.endDir / 'data' / 'Centroid_cell.mat')
+        centroid_cell_end = centroid_cell_end['Centroid_cell']
 
     # Load Loc_cell.mat (links local/global indices) and Centroid_cell.mat (raft px location within subsection) for data.
     loc_cell2 = loadmat(exp.dataDir / 'data' / 'Loc_cell2.mat')
@@ -67,31 +68,45 @@ def cropRafts(exp):
             raft_loc_idx = [tp[3] for tp in raft_loc_cell2] # list of local indices for tl
             raft_coord_exist = [a <= b for a, b in zip(raft_loc_idx, raft_centroid_cell_count)] # a <= b because MATLAB starts at 1
 
+            # TODO: somehow make this robust to rafts that "disappear" throughout time-series
+            # TODO: iterate through raft list and identify these rafts, compile as dict (key=raft)
+            # TODO: determine median img_row/col + loc_idx from other tp
+            # TODO: store median img_row/col + loc_idx in dict
+
+            # Skip rafts that DNE at any time point.
             if (0 in raft_loc_idx) or (False in raft_coord_exist):
                 continue
+
+            # TODO: Skip rafts if and only if DNE across entire time-series.
+            # if all(x == 0 for x in raft_loc_idx) or not any(raft_coord_exist):
+            #     continue
+
             raftCount += 1 # count only rafts that exist
             # print(f'\t Array {arr + 1} Raft {raft + 1}')
 
             # Crop raft at final time point for all endpoint channels then stack into single TIFF as (c, y, x).
-            crop_end = []
-            img_row_end, img_col_end, loc_idx_end = getLocIdx(loc_cell2_end, arr, endTP, raft)
+            if ch_end:
+                crop_end = []
+                # TODO: if raft is in missing dict then get img_row/col + loc_idx from dict, else:
+                img_row_end, img_col_end, loc_idx_end = getLocIdx(loc_cell2_end, arr, endTP, raft)
 
-            for ch in ch_end:
-                raftCrop = crop(exp, exp.endDir,
-                                img_row_end, img_col_end, loc_idx_end,
-                                centroid_cell_end,
-                                arr, endTP, ch)
-                crop_end.append(raftCrop)
-            end_img = np.stack(crop_end, axis=0)
-            outPath_end_raft = outDir_end / f'array{arr + 1}_raft{(raft + 1):03}_end.tif'
-            tiff.imwrite(outPath_end_raft, end_img,
-                         imagej=True, metadata={'axes': 'CYX',
-                                                'channels': [rep_and_stain[f'end_{ch}'] for ch in ch_end]})
+                for ch in ch_end:
+                    raftCrop = crop(exp, exp.endDir,
+                                    img_row_end, img_col_end, loc_idx_end,
+                                    centroid_cell_end,
+                                    arr, endTP, ch)
+                    crop_end.append(raftCrop)
+                end_img = np.stack(crop_end, axis=0)
+                outPath_end_raft = outDir_end / f'array{arr + 1}_raft{(raft + 1):03}_end.tif'
+                tiff.imwrite(outPath_end_raft, end_img,
+                             imagej=True, metadata={'axes': 'CYX',
+                                                    'channels': [rep_and_stain[f'end_{ch}'] for ch in ch_end]})
 
+            # Crop raft at each time point for all time-lapse channels then stack into single TIFF as (tp, c, y, x).
             if exp.numTimePoints > 1:
-                # Crop raft at each time point for all time-lapse channels then stack into single TIFF as (tp, c, y, x).
                 crop_tp = []
                 for tp in range(exp.numTimePoints):
+                    # TODO: if raft is in missing dict then get img_row/col + loc_idx from dict, else:
                     img_row, img_col, loc_idx = getLocIdx(loc_cell2, arr, tp, raft)
                     crop_ch = []
                     for ch in ch_tl:
@@ -122,11 +137,20 @@ def getLocIdx(loc_cell2, arr, tp, raft):
     return img_row, img_col, loc_idx
 
 
-# Loop through loc_cell for each raft and locate corresponding array subsection folder.
-def crop(exp, dir, img_row, img_col, loc_idx, centroid_cell, arr, tp, ch):
-    # Identify local px coordinate for specific raft.
+# Get local px coordinates for specific raft.
+def getCentroid(img_row, img_col, loc_idx, centroid_cell, arr, tp):
     raft_loc_x = centroid_cell[arr, tp][img_row, img_col][loc_idx][0]
     raft_loc_y = centroid_cell[arr, tp][img_row, img_col][loc_idx][1]
+    return raft_loc_x, raft_loc_y
+
+
+# Loop through loc_cell for each raft and locate corresponding array subsection folder.
+def crop(exp, dir, img_row, img_col, loc_idx, centroid_cell, arr, tp, ch, tp_cen=None):
+    if tp_cen is None:
+        tp_cen = tp
+
+    # Find local px coordinates.
+    raft_loc_x, raft_loc_y = getCentroid(img_row, img_col, loc_idx, centroid_cell, arr, tp_cen)
 
     # Locate subsection folder and specific image file for Time Point 'tp' and Channel 'ch'.
     imgPath = dir / f'{arr + 1}' / f'{img_row + 1}x{img_col + 1}' / f'{tp:02}_{ch}.tif'

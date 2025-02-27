@@ -10,7 +10,8 @@ class ExpMeta(object):
                  dataDir: str,
                  channel_mask: str,
                  channels_tl=[],
-                 endDirSame=True
+                 endDirSame=True,
+                 load=False
                  ):
         # Fairly consistent variables
         self.arrDim = [800, 100, 23]  # [side dimensions, gap spacing, # rafts in single row]
@@ -28,7 +29,7 @@ class ExpMeta(object):
                                10: 0.6522,
                                12.6: 0.5247
                                }  # pxSizes (um/px) for 2x objective across magnifications
-        self.mag = 3.2
+        self.mag = 4
         self.pxSize = self.dict_pxSize_2x[self.mag]
 
         # Variables that change for each experiment
@@ -55,36 +56,41 @@ class ExpMeta(object):
                              'r': 'Red',
                              'FarRed': 'FarRed',
                              'fr': 'FarRed'}
-        self.reporters_and_stains = {'tl_BF': 'BF',
-                                     'tl_Violet': 'BRA',
-                                     'tl_Green': 'SOX2',
-                                     'tl_Red': 'SOX17',
-                                     'end_BF': 'BF',
-                                     }
-        self.channel_mask = self.channels_abb[channel_mask]
 
-        while self.channel_mask is not None:
-            endDirSame = input('Is the mask folder the same as the data folder? (y/n): ')
-            if endDirSame.lower() == 'y':
-                endDirSame = True
-                break
-            elif endDirSame.lower() == 'n':
-                endDirSame = False
-                break
-            else:
-                continue
-        self.set_endDir(endDirSame)
+        if load is False:
+            self.reporters_and_stains = {'tl_BF': 'BF',
+                                         'tl_Violet': 'BRA',
+                                         'tl_Green': 'SOX2',
+                                         'tl_Red': 'SOX17',
+                                         'end_BF': 'BF',
+                                         }
+            self.channel_mask = self.channels_abb[channel_mask]
 
-        channels_main = self.find_channels(firstFolder) # channels in dataDir
-        if self.numTimePoints > 1:
-            channels_tl = input('Enter reporter channels separated by spaces (all, b, v, g, r, fr): ')
-            channels_tl = channels_tl.split()
-        self.set_channels(channels_main, channels_tl, endDirSame)
-        print(f'Channels ({len(self.channels)} total): {self.channels}')
-        print()
+            while self.channel_mask is not None:
+                endDirSame = input('Is the mask folder the same as the data folder? (y/n): ')
+                if endDirSame.lower() == 'y':
+                    endDirSame = True
+                    break
+                elif endDirSame.lower() == 'n':
+                    endDirSame = False
+                    break
+                else:
+                    continue
+            self.set_endDir(endDirSame)
 
-        if self.channels_end:
-            self.set_endStains()
+            channels_main = self.find_channels(firstFolder) # channels in dataDir
+            if (self.numTimePoints > 1):
+                channels_tl = input('Enter reporter channels separated by spaces (all, b, v, g, r, fr): ')
+                channels_tl = channels_tl.split()
+            self.set_channels(channels_main, channels_tl, endDirSame)
+            print(f'Channels ({len(self.channels)} total): {self.channels}')
+            print()
+
+            if self.channels_end:
+                self.set_endStains()
+
+        else:
+            ...
 
         # Variables that modify behavior of image analysis
         self.tileScale = 0.1

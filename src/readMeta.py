@@ -5,6 +5,7 @@ import pandas as pd
 import ast
 from src.expMeta import ExpMeta
 
+# TODO: need to update because of changes to expMeta.py
 def ReadMeta(dataDir):
     metaDir = Path(f'{dataDir}_Analysis') / 'Experiment Metadata.csv'
     df_meta = pd.read_csv(metaDir)
@@ -21,9 +22,9 @@ def ReadMeta(dataDir):
     currExp = ExpMeta(dataDir=dataDir,
                       channel_mask=channel_mask,
                       channels_tl=channels_tl,
-                      timeInt=interval,
-                      endDirSame=endDirSame,
-                      timeOffset=timeOffset)
+                      endDirSame=endDirSame)
+    currExp.interval = interval
+    currExp.timeOffset = timeOffset
     currExp.reporters_and_stains = ast.literal_eval(dict_meta['Reporters & Stains'])
     print()
 

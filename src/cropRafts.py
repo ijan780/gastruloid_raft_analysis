@@ -119,11 +119,18 @@ def cropRafts(exp):
                         crop_ch.append(raftCrop)
                     stacked_ch = np.stack(crop_ch, axis=0)
                     crop_tp.append(stacked_ch)
-                tl_img = np.stack(crop_tp, axis=0)
-                outPath_tl_raft = outDir_tl / f'array{arr + 1}_raft{(raft + 1):03}_tl.tif'
-                tiff.imwrite(outPath_tl_raft, tl_img,
-                             imagej=True, metadata={'axes': 'TCYX',
-                                                    'channels': [rep_and_stain[f'tl_{ch}'] for ch in ch_tl]})
+
+                # TODO: make this more robust for awkward locIdx (low priority)
+                stack_ch_shapes = [np.shape(img) for img in crop_tp]
+                # print((arr + 1), (raft + 1), stack_ch_shapes)
+                if all(x == stack_ch_shapes[0] for x in stack_ch_shapes):
+                    tl_img = np.stack(crop_tp, axis=0)
+                    outPath_tl_raft = outDir_tl / f'array{arr + 1}_raft{(raft + 1):03}_tl.tif'
+                    tiff.imwrite(outPath_tl_raft, tl_img,
+                                 imagej=True, metadata={'axes': 'TCYX',
+                                                        'channels': [rep_and_stain[f'tl_{ch}'] for ch in ch_tl]})
+                else:
+                    continue
 
         pbar.close()
         print(f'\t(Array {arr + 1}) Cropped {raftCount} rafts')

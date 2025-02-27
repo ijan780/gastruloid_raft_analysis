@@ -40,10 +40,10 @@ while True:
     else:
         continue
 
-# Stitch images into composite.
-print('NOW STITCHING...')
-stitchArray(currExp)
-print()
+# # Stitch images into composite.
+# print('NOW STITCHING...')
+# stitchArray(currExp)
+# print()
 
 # Crops individual identified rafts.
 print('NOW CROPPING TO RAFTS...')

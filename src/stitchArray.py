@@ -58,12 +58,12 @@ def stitchArray(exp):
             outPath = outDir_main / f'array{arr + 1}_timepoint{(exp.numTimePoints - 1):02}_{exp.channel_mask}.tif'
             tiff.imwrite(outPath, stitchedImg)
 
-        # Stitch other channels next
+        # Stitch other channels next.
         posDict = img_pos(exp, arr, positions)
         arrDir = exp.dataDir / f'{arr + 1}'
         for tp in orderTP:
             for ch in ch_stitch:
-                status = f'\tTime Point {tp:02} - Channel {ch}'
+                status = f'\tArray{arr+1} - Time Point {tp:02} - Channel {ch}'
                 imgPaths = []
                 for sub in os.listdir(arrDir):
                     imgPath = arrDir / sub / f'{tp:02}_{ch}.tif'

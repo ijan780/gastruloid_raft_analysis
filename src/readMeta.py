@@ -1,3 +1,4 @@
+## OBSOLETE - ONLY ARCHIVAL PURPOSES ##
 # readMeta.py - loads from metadata csv file.
 
 from pathlib import Path

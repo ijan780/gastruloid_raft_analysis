@@ -1,7 +1,6 @@
 # raftImageAnalysis_main.py - Initializes key parameters for MVX raft image analysis.
 
 from expMeta import ExpMeta
-from readMeta import ReadMeta
 from stitchArray import stitchArray
 from cropRafts import cropRafts
 from analyzeFluor_GLR import analyzeFluor
@@ -13,7 +12,8 @@ while True:
     if load_or_create.lower() == 'y':
         print('LOADING EXPERIMENT...')
         dataDir = input('Enter data folder absolute path: ')
-        currExp = ReadMeta(dataDir)
+        currExp = ExpMeta(dataDir=dataDir,
+                          load=True)
         break
 
     elif load_or_create.lower() == 'n':

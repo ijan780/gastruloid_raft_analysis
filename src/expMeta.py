@@ -4,11 +4,12 @@ from pathlib import Path
 import os
 import pandas as pd
 from parse import parse
+import ast
 
 class ExpMeta(object):
     def __init__(self,
                  dataDir: str,
-                 channel_mask: str,
+                 channel_mask=None,
                  channels_tl=[],
                  endDirSame=True,
                  load=False
@@ -31,17 +32,6 @@ class ExpMeta(object):
                                }  # pxSizes (um/px) for 2x objective across magnifications
         self.mag = 4
         self.pxSize = self.dict_pxSize_2x[self.mag]
-
-        # Variables that change for each experiment
-        self.set_dataDir(dataDir)
-        self.analDir = Path(f'{self.dataDir}_Analysis')
-        self.analDir.mkdir(exist_ok=True)
-
-        self.pattern = '{timePoint}_{channel}.tif'
-        firstFolder = self.find_firstFolder(dataDir)
-        self.set_numArrs()
-        self.set_time(firstFolder)
-
         self.channels_abb = {'na': None,
                              'all': 'all',
                              'BF': 'BF',
@@ -56,14 +46,24 @@ class ExpMeta(object):
                              'r': 'Red',
                              'FarRed': 'FarRed',
                              'fr': 'FarRed'}
+        self.reporters_and_stains = {'tl_BF': 'BF',
+                                     'tl_Violet': 'BRA',
+                                     'tl_Green': 'SOX2',
+                                     'tl_Red': 'SOX17',
+                                     'end_BF': 'BF',
+                                     }
 
+        # Variables that change for each experiment
         if load is False:
-            self.reporters_and_stains = {'tl_BF': 'BF',
-                                         'tl_Violet': 'BRA',
-                                         'tl_Green': 'SOX2',
-                                         'tl_Red': 'SOX17',
-                                         'end_BF': 'BF',
-                                         }
+            self.set_dataDir(dataDir)
+            self.analDir = Path(f'{self.dataDir}_Analysis')
+            self.analDir.mkdir(exist_ok=True)
+
+            self.pattern = '{timePoint}_{channel}.tif'
+            firstFolder = self.find_firstFolder(dataDir)
+            self.set_numArrs()
+            self.set_time(firstFolder)
+
             self.channel_mask = self.channels_abb[channel_mask]
 
             while self.channel_mask is not None:
@@ -90,7 +90,7 @@ class ExpMeta(object):
                 self.set_endStains()
 
         else:
-            ...
+            self.read_metadata(dataDir)
 
         # Variables that modify behavior of image analysis
         self.tileScale = 0.1
@@ -226,3 +226,25 @@ class ExpMeta(object):
         # f.close()
 
         print('SAVED EXPERIMENT METADATA AS CSV.\n')
+
+    def read_metadata(self, dataDir):
+        metaDir = Path(f'{dataDir}_Analysis') / 'Experiment Metadata.csv'
+        df_meta = pd.read_csv(metaDir)
+        dict_meta = df_meta.set_index('Properties')['Values'].to_dict()
+
+        self.dataDir = Path(dataDir)
+        self.endDir = Path(dict_meta['End Dir'])
+        self.endDirSame = (dict_meta['Data Dir'] == dict_meta['End Dir'])
+        self.analDir = Path(dict_meta['Analysis Dir'])
+        self.interval = float(dict_meta['Time Interval (hrs)'])
+        self.timeOffset = float(dict_meta['Time Offset (hrs)'])
+        self.numTimePoints = int(dict_meta['Number of Time Points'])
+        self.numArrs = int(dict_meta['Number of Arrays'])
+        self.channels = ast.literal_eval(dict_meta['Channels (total)'])
+        self.reporters_and_stains = ast.literal_eval(dict_meta['Reporters & Stains'])
+        self.channel_mask = dict_meta['Channel (mask)']
+        self.channels_tl = ast.literal_eval(dict_meta['Channels (tl)'])
+        self.channels_end = ast.literal_eval(dict_meta['Channels (end)'])
+        self.mag = float(dict_meta['Magnification'])
+        self.pxSize = float(dict_meta['Pixel Size'])
+        self.tileScale = float(dict_meta['Scale for Stitched Composites'])

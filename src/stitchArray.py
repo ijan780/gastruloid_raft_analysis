@@ -63,7 +63,7 @@ def stitchArray(exp):
         arrDir = exp.dataDir / f'{arr + 1}'
         for tp in orderTP:
             for ch in ch_stitch:
-                status = f'\tArray{arr+1} - Time Point {tp:02} - Channel {ch}'
+                status = f'\tArray {arr+1} - Time Point {tp:02} - Channel {ch}'
                 imgPaths = []
                 for sub in os.listdir(arrDir):
                     imgPath = arrDir / sub / f'{tp:02}_{ch}.tif'

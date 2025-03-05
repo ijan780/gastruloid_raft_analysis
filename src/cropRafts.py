@@ -25,12 +25,11 @@ def cropRafts(exp):
     else:
         endTP = 0
 
-    if not endDirSame:
-        # Load Loc_cell.mat (links local/global indices) and Centroid_cell.mat (raft px location within subsection) for endpoint.
-        loc_cell2_end = loadmat(exp.endDir / 'data' / 'Loc_cell2.mat')
-        loc_cell2_end = loc_cell2_end['Loc_cell2']
-        centroid_cell_end = loadmat(exp.endDir / 'data' / 'Centroid_cell.mat')
-        centroid_cell_end = centroid_cell_end['Centroid_cell']
+    # Load Loc_cell.mat (links local/global indices) and Centroid_cell.mat (raft px location within subsection) for endpoint.
+    loc_cell2_end = loadmat(exp.endDir / 'data' / 'Loc_cell2.mat')
+    loc_cell2_end = loc_cell2_end['Loc_cell2']
+    centroid_cell_end = loadmat(exp.endDir / 'data' / 'Centroid_cell.mat')
+    centroid_cell_end = centroid_cell_end['Centroid_cell']
 
     # Load Loc_cell.mat (links local/global indices) and Centroid_cell.mat (raft px location within subsection) for data.
     loc_cell2 = loadmat(exp.dataDir / 'data' / 'Loc_cell2.mat')

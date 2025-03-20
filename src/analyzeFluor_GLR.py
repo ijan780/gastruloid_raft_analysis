@@ -1,6 +1,6 @@
 # analyzeFluor_GLR.py - Analyzes each gastruloid-on-raft (requires time-lapse imaging.
 
-from src.readMeta import ReadMeta
+import expMeta
 
 import math
 from tqdm import tqdm
@@ -16,23 +16,18 @@ from skimage.draw import ellipse
 import matplotlib.pyplot as plt
 from itertools import zip_longest
 
-
-def analyzeFluor(exp):
+# TODO: implement workflow for images with manually drawn ROI
+def analyzeFluor(exp, flag_manMask):
     numRafts = exp.arrDim[2] ** 2
 
     interval = exp.interval
     numTP = exp.numTimePoints
     timeOffset = exp.timeOffset
     pxSize = exp.pxSize
-
-    channel_mask = exp.channel_mask
-    mask_idx = exp.channels_end.index(channel_mask)
-    ch_end = exp.channels_end
-    if 'BF' in ch_end:
-        ch_end.remove('BF')
-    ch_tl = exp.channels_tl
-    ch_tl.remove('BF')
-    fluor_channels = ch_end + ch_tl
+    
+    mask_idx = exp.channels_tl.index('Green') * 2 # masking uses SOX2 image at tp = 2
+    fluorChs = exp.channels_tl
+    fluorChs.remove('BF')
 
     # For from center measurements.
     ringWidth = 10  # px
@@ -47,52 +42,49 @@ def analyzeFluor(exp):
         flags_missing = []
         flags_empty = []
         flags_border = []
-
         # flags_lo_int = [0] * (numRafts * numTP)
 
-        # Features for all channels.
-        numObjs = [[] for _ in fluor_channels]
-        threshVals = [[] for _ in fluor_channels]
-        fAreas = [[] for _ in fluor_channels]
-        dens = [[] for _ in fluor_channels]
-        eccens = [[] for _ in fluor_channels]
-        radii = [[] for _ in fluor_channels]
-        intMeans = [[] for _ in fluor_channels]
-
-        # Features for only time-lapse channels.
-        intMeans_fold = [[] for _ in ch_tl]
-        intMeans_perpx = [[] for _ in ch_tl]
-        intMeans_perpx_fold = [[] for _ in ch_tl]
-        intMeans_fromCenter = [[[] for _ in range(numRings)] for _ in ch_tl]
-        intMeans_radialSlope = [[] for _ in ch_tl]
+        # Features for time-lapse channels.
+        numObjs = [[] for _ in fluorChs]
+        threshVals = [[] for _ in fluorChs]
+        fAreas = [[] for _ in fluorChs]
+        dens = [[] for _ in fluorChs]
+        eccens = [[] for _ in fluorChs]
+        radii = [[] for _ in fluorChs]
+        intMeans = [[] for _ in fluorChs]
+        intMeans_fold = [[] for _ in fluorChs]
+        intMeans_perpx = [[] for _ in fluorChs]
+        intMeans_perpx_fold = [[] for _ in fluorChs]
+        intMeans_fromCenter = [[[] for _ in range(numRings)] for _ in fluorChs]
+        intMeans_radialSlope = [[] for _ in fluorChs]
 
         pbar = tqdm(range(1, (numRafts + 1)), desc=f'\tArray {arr + 1}')
         for raft in pbar:
             # Dedicated lists for each raft to later append to array-wide lists above.
-            numObjs_raft = [[None] * numTP for _ in fluor_channels]
-            threshVals_raft = [[None] * numTP for _ in fluor_channels]
-            fAreas_raft = [[None] * numTP for _ in fluor_channels]
-            dens_raft = [[None] * numTP for _ in fluor_channels]
-            eccens_raft = [[None] * numTP for _ in fluor_channels]
-            radii_raft = [[None] * numTP for _ in fluor_channels]
-            intMeans_raft = [[None] * numTP for _ in fluor_channels]
-            intMeans_fold_raft = [[None] * numTP for _ in ch_tl]
-            intMeans_perpx_raft = [[None] * numTP for _ in ch_tl]
-            intMeans_perpx_fold_raft = [[None] * numTP for _ in ch_tl]
-            intMeans_fromCenter_raft = [[[None] * numTP for _ in range(numRings)] for _ in ch_tl]
-            intMeans_radialSlope_raft = [[None] * numTP for _ in ch_tl]
+            numObjs_raft = [[None] * numTP for _ in fluorChs]
+            threshVals_raft = [[None] * numTP for _ in fluorChs]
+            fAreas_raft = [[None] * numTP for _ in fluorChs]
+            dens_raft = [[None] * numTP for _ in fluorChs]
+            eccens_raft = [[None] * numTP for _ in fluorChs]
+            radii_raft = [[None] * numTP for _ in fluorChs]
+            intMeans_raft = [[None] * numTP for _ in fluorChs]
+            intMeans_fold_raft = [[None] * numTP for _ in fluorChs]
+            intMeans_perpx_raft = [[None] * numTP for _ in fluorChs]
+            intMeans_perpx_fold_raft = [[None] * numTP for _ in fluorChs]
+            intMeans_fromCenter_raft = [[[None] * numTP for _ in range(numRings)] for _ in fluorChs]
+            intMeans_radialSlope_raft = [[None] * numTP for _ in fluorChs]
 
-            # Directory of endpoint image.
-            dir_end = exp.analDir / 'Individual Raft Images' / 'Endpoint'
-            imagePath_end = dir_end / f'array{arr + 1}_raft{raft:03}_end.tif'
+            # Directory of time-lapse image.
+            dirTL = exp.analDir / 'Individual Raft Images' / 'Time-lapse'
+            imagePath = dirTL / f'array{arr + 1}_raft{raft:03}_end.tif'
 
             # Only process rafts that exist.
-            if imagePath_end.is_file():
+            if imagePath.is_file():
                 # print(f'\tExists: Raft {raft}')
                 flags_missing += [0] * numTP
 
                 # Create binary mask for ROI mask.
-                with tiff.TiffFile(imagePath_end) as tif:
+                with tiff.TiffFile(imagePath) as tif:
                     image = tif.pages[mask_idx].asarray()
                 hull, thresh, threshVal = segment_hull(image)
 
@@ -129,8 +121,8 @@ def analyzeFluor(exp):
 
                     # Process time-lapse germ layer reporters.
                     for tp in range(numTP):
-                        for idx, ch in enumerate(ch_tl):
-                            slice_idx = tp * (len(ch_tl) + 1) + (ch_tl.index(ch) + 1)  # accounting for removal of BF channel
+                        for idx, ch in enumerate(fluorChs):
+                            slice_idx = tp * (len(fluorChs) + 1) + (fluorChs.index(ch) + 1)  # accounting for removal of BF channel
 
 
                             dir_tl = exp.analDir / 'Individual Raft Images' / 'Time-lapse'
@@ -146,27 +138,26 @@ def analyzeFluor(exp):
                             fArea, numObj, den, eccen, radius, intMean, intMean_perpx, _ = measure_genFeat(image,
                                                                                                            thresh,
                                                                                                            fArea_hull)
-                            numObjs_raft[idx + len(ch_end)][tp] = numObj
+                            numObjs_raft[idx][tp] = numObj
 
                             if numObj != 0:
-                                threshVals_raft[idx + len(ch_end)][tp] = threshVal
-                                fAreas_raft[idx + len(ch_end)][tp] = fArea
-                                dens_raft[idx + len(ch_end)][tp] = den
-                                eccens_raft[idx + len(ch_end)][tp] = eccen
-                                radii_raft[idx + len(ch_end)][tp] = radius
-                                intMeans_raft[idx + len(ch_end)][tp] = intMean
-                                intMeans_fold_raft[idx][tp] = (intMean /
-                                                               intMeans_raft[idx + len(ch_end)][0])
+                                threshVals_raft[idx][tp] = threshVal
+                                fAreas_raft[idx][tp] = fArea
+                                dens_raft[idx][tp] = den
+                                eccens_raft[idx][tp] = eccen
+                                radii_raft[idx][tp] = radius
+                                intMeans_raft[idx][tp] = intMean
+                                intMeans_fold_raft[idx][tp] = (intMean / intMeans_raft[idx][0])
                                 intMeans_perpx_raft[idx][tp] = intMean_perpx
                                 intMeans_perpx_fold_raft[idx][tp] = intMean_perpx / intMeans_perpx_raft[idx][0]
 
                                 # Determine intMean from center normalized to intMean via concentric rings at tp = 0.
-                                if (flag_border == 0) and (intMeans_raft[idx + len(ch_end)][0] != None):
+                                if (flag_border == 0) and (intMeans_raft[idx][0] != None):
                                     for count, r in enumerate(range(ringWidth, (gasRad + 1), ringWidth)):
                                         intMean_ring = fromCenter(image, hull, hull_centroid, r, ringWidth)
                                         if math.isnan(intMean_ring):
                                             break
-                                        intMean_fromCenter = intMean_ring / intMeans_raft[idx + len(ch_end)][0]
+                                        intMean_fromCenter = intMean_ring / intMeans_raft[idx][0]
                                         ringNum = count
                                         intMeans_fromCenter_raft[idx][count][tp] =  intMean_fromCenter
 
@@ -181,7 +172,7 @@ def analyzeFluor(exp):
                 flags_border += [None] * numTP
 
             # Append raft-specific lists to array-wide lists.
-            for idx, _ in enumerate(fluor_channels):
+            for idx, _ in enumerate(fluorChs):
                 numObjs[idx] += numObjs_raft[idx]
                 threshVals[idx] += threshVals_raft[idx]
                 fAreas[idx] += fAreas_raft[idx]
@@ -189,7 +180,7 @@ def analyzeFluor(exp):
                 eccens[idx] += eccens_raft[idx]
                 radii[idx] += radii_raft[idx]
                 intMeans[idx] += intMeans_raft[idx]
-            for idx, _ in enumerate(ch_tl):
+            for idx, _ in enumerate(fluorChs):
                 intMeans_fold[idx] += intMeans_fold_raft[idx]
                 intMeans_perpx[idx] += intMeans_perpx_raft[idx]
                 intMeans_perpx_fold[idx] += intMeans_perpx_fold_raft[idx]
@@ -218,7 +209,7 @@ def analyzeFluor(exp):
         pbar.close()
 
         # Create data frame for Array 'arr'.
-        df_rafts = saveFluorAnal(exp, ch_end, ch_tl, arr, raftNums, times,
+        df_rafts = saveFluorAnal(exp, fluorChs, arr, raftNums, times,
                                  flags_missing, flags_empty, flags_border,
                                  numObjs, threshVals, fAreas, dens, eccens, radii, intMeans,
                                  intMeans_fold, intMeans_perpx, intMeans_perpx_fold,
@@ -365,7 +356,7 @@ def fromCenter(image, hull, hull_centroid, r, ringWidth):
 
 
 # Creates and saves dataframe of raft data.
-def saveFluorAnal(exp, ch_end, ch_tl, arr, raftNums, times,
+def saveFluorAnal(exp, fluorChs, arr, raftNums, times,
                   flags_missing, flags_empty, flags_border,
                   numObjs, threshVals, fAreas, dens, eccens, radii, intMeans,
                   intMeans_fold, intMeans_perpx, intMeans_perpx_fold,
@@ -379,8 +370,8 @@ def saveFluorAnal(exp, ch_end, ch_tl, arr, raftNums, times,
                              'Empty': flags_empty,
                              'Border': flags_border})
 
-    for idx, ch in enumerate(ch_end):
-        rep_or_stain = rep_and_stain[f'end_{ch}']
+    for idx, ch in enumerate(fluorChs):
+        rep_or_stain = rep_and_stain[f'tl_{ch}']
 
         df_rafts[f'NumObj_{rep_or_stain}'] = numObjs[idx]
         df_rafts[f'ThreshVal_{rep_or_stain}'] = threshVals[idx]
@@ -389,17 +380,6 @@ def saveFluorAnal(exp, ch_end, ch_tl, arr, raftNums, times,
         df_rafts[f'Eccen_{rep_or_stain}'] = eccens[idx]
         df_rafts[f'Radius_{rep_or_stain}'] = radii[idx]
         df_rafts[f'IntMean_{rep_or_stain}'] = intMeans[idx]
-
-    for idx, ch in enumerate(ch_tl):
-        rep_or_stain = rep_and_stain[f'tl_{ch}']
-
-        df_rafts[f'NumObj_{rep_or_stain}'] = numObjs[idx + len(ch_end)]
-        df_rafts[f'ThreshVal_{rep_or_stain}'] = threshVals[idx + len(ch_end)]
-        df_rafts[f'FArea_{rep_or_stain}'] = fAreas[idx + len(ch_end)]
-        df_rafts[f'Den_{rep_or_stain}'] = dens[idx + len(ch_end)]
-        df_rafts[f'Eccen_{rep_or_stain}'] = eccens[idx + len(ch_end)]
-        df_rafts[f'Radius_{rep_or_stain}'] = radii[idx+ len(ch_end)]
-        df_rafts[f'IntMean_{rep_or_stain}'] = intMeans[idx + len(ch_end)]
 
         df_rafts[f'IntMean_Fold_{rep_or_stain}'] = intMeans_fold[idx]
         df_rafts[f'IntMean_PerPx_{rep_or_stain}'] = intMeans_perpx[idx]
@@ -429,17 +409,17 @@ def raft_grad(exp, arr, df_rafts):
     excl_border = list(set(border['Raft'].tolist()))
 
     raftExcl = excl_missing + excl_empty + excl_border
-    raftPass = [raft for raft in range(1, (numRafts + 1)) if raft not in raftExcl]
+    raftCen = [raft for raft in range(1, (numRafts + 1)) if raft not in raftExcl]
 
     # Pad each list to proper length.
-    grades = [raftPass, raftExcl,
+    grades = [raftCen, raftExcl,
               excl_missing, excl_empty, excl_border]
     for grade in grades:
         grade.sort()
     # print(grades)
     grades = list(zip(*zip_longest(*grades, fillvalue=None)))
 
-    df_grad = pd.DataFrame({"Pass": grades[0],
+    df_grad = pd.DataFrame({"Centered": grades[0],
                             "Exclude": grades[1],
                             "Excl_missing": grades[2],
                             "Excl_empty": grades[3],
@@ -453,6 +433,6 @@ def raft_grad(exp, arr, df_rafts):
 # Run analysis without running raftImageAnalysis_main.py.
 if __name__ == '__main__':
     dataDir = r'C:\Users\MVX\Documents\2 - Data\240805_R2GLR_1.8e6_0-48hrBMP4_0%aneu_4'
-    currExp = ReadMeta(dataDir)
+    currExp = expMeta(dataDir, load=True)
 
     analyzeFluor(currExp)

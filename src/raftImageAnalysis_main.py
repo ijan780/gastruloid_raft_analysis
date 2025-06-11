@@ -45,12 +45,12 @@ print('NOW STITCHING...')
 stitchArray(currExp)
 print()
 
-# Crops individual identified rafts.
+# Crop individual identified rafts.
 print('NOW CROPPING TO RAFTS...')
 cropRafts(currExp)
 print()
 
-# # Performs fluorescence analysis.
+# # Perform fluorescence analysis.
 # print('NOW PERFORMING FLUORESCENCE ANALYSIS')
 # analyzeFluor(currExp)
 # print()

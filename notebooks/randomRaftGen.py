@@ -7,7 +7,7 @@ import csv
 import random
 
 #%%
-dataDir = Path(r'C:\Users\MVX\Documents\2 - Data\250224_R2GR_1.8e6_0-48hrBMP4_0%&100%aneu_1_Isolation')
+dataDir = Path(r'C:\Users\MVX\Documents\2 - Data\250609_R2GLR_1.8e6_0-48hrBMP4_0%&100%aneu_3_Isolation')
 numArrs = 2
 numRafts = 16
 
@@ -39,4 +39,4 @@ with open(file_path, mode="w", newline="") as file:
     writer = csv.writer(file)
     writer.writerows(table)
 
-print(f"CSV file saved as {file_path}")
+print(f'CSV file saved as {file_path}')

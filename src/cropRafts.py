@@ -3,6 +3,7 @@
 from pathlib import Path
 from scipy.io import loadmat
 from tqdm import tqdm
+import sys
 
 from skimage import io
 import numpy as np
@@ -48,7 +49,7 @@ def cropRafts(exp):
     # Loop through loc_cell for each raft and locate corresponding array subsection folder.
     for arr in range(exp.numArrs):
         raftCount = 0
-        skipRafts = {}
+        # skipRafts = {}
         pbar = tqdm(range(0, numRafts), desc=f'\tArray {arr + 1}')
         for raft in pbar:
             # Check if raft exists at every time point (including separate mask imaging) and if locIdx is within num of rafts in centroid_cell.
@@ -132,6 +133,7 @@ def cropRafts(exp):
                     continue
 
         pbar.close()
+        sys.stdout.flush()
         print(f'\t(Array {arr + 1}) Cropped {raftCount} rafts')
 
     print('Crop complete.')

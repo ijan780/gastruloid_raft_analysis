@@ -7,7 +7,10 @@ import csv
 import random
 
 #%%
-dataDir = Path(r'C:\Users\MVX\Documents\2 - Data\250609_R2GLR_1.8e6_0-48hrBMP4_0%&100%aneu_3_Isolation')
+dataDir_input = input('Load experiment? (y/n): ')
+dataDir = Path(dataDir_input)
+
+#%%
 numArrs = 2
 numRafts = 16
 

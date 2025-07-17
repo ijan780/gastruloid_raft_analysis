@@ -5,6 +5,7 @@ import os
 import pandas as pd
 from parse import parse
 import ast
+import math
 
 class ExpMeta(object):
     def __init__(self,
@@ -242,7 +243,10 @@ class ExpMeta(object):
         self.numArrs = int(dict_meta['Number of Arrays'])
         self.channels = ast.literal_eval(dict_meta['Channels (total)'])
         self.reporters_and_stains = ast.literal_eval(dict_meta['Reporters & Stains'])
-        self.channel_mask = dict_meta['Channel (mask)']
+        if math.isnan(dict_meta['Channel (mask)']):
+            self.channel_mask = None
+        else:
+            self.channel_mask = dict_meta['Channel (mask)']
         self.channels_tl = ast.literal_eval(dict_meta['Channels (tl)'])
         self.channels_end = ast.literal_eval(dict_meta['Channels (end)'])
         self.mag = float(dict_meta['Magnification'])

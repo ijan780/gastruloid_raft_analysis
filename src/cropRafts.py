@@ -47,6 +47,7 @@ def cropRafts(exp):
     outDir_tl.mkdir(exist_ok=True)
 
     # Loop through loc_cell for each raft and locate corresponding array subsection folder.
+    raftCounts = []
     for arr in range(exp.numArrs):
         raftCount = 0
         # skipRafts = {}
@@ -134,8 +135,10 @@ def cropRafts(exp):
 
         pbar.close()
         sys.stdout.flush()
-        print(f'\t(Array {arr + 1}) Cropped {raftCount} rafts')
+        raftCounts.append(raftCount)
 
+    for arrCount, raftCount in enumerate(raftCounts):
+        print(f'\t(Array {arrCount + 1}) Cropped {raftCount} rafts')
     print('Crop complete.')
 
 

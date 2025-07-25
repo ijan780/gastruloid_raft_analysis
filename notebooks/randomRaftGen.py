@@ -7,7 +7,7 @@ import csv
 import random
 
 #%%
-dataDir_input = input('Load experiment? (y/n): ')
+dataDir_input = input('Isolation directory: ')
 dataDir = Path(dataDir_input)
 
 #%%

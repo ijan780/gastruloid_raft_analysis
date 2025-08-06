@@ -1,26 +1,21 @@
 #%% [markdown]
 # Generate random raft indices for isolation.
 
-#%%
 from pathlib import Path
 import csv
 import random
 
-#%%
 dataDir_input = input('Isolation directory: ')
 dataDir = Path(dataDir_input)
 
-#%%
 numArrs = 2
 numRafts = 16
 
-#%%
 cenRafts = []
 for r in range(2, 21):
     for c in range(2, 21):
         cenRafts.append((r * 23) + (c + 1))
 
-#%%
 table = [['x' for _ in range(12)] for _ in range(8)]
 
 for arr in range(numArrs):
@@ -36,7 +31,6 @@ for arr in range(numArrs):
 
 print(table)
 
-#%%
 file_path = dataDir / 'Raft Isolation Map.csv'
 with open(file_path, mode="w", newline="") as file:
     writer = csv.writer(file)

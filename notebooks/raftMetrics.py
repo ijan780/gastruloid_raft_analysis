@@ -1,4 +1,166 @@
 #%% [markdown]
+# MANUSCRIPT 2
+
+#%% [markdown]
+# Gastruloid grading.
+
+#%%
+from pathlib import Path
+import pandas as pd
+from collections import Counter
+
+from skimage import io
+from skimage.measure import label, regionprops_table
+
+import numpy as np
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+#%%
+dataDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Manuscripts\Manuscript 2\Data')
+df_grad = pd.read_csv(dataDir / 'Endpoint Gastruloid Grading.csv')
+
+counts_grad = Counter(df_grad['Grade'].tolist())
+grades = list(counts_grad.keys())
+percRafts_grad = [(x / 50 * 100) for x in list(counts_grad.values())]
+percRafts_grad_mod = [percRafts_grad[0], (percRafts_grad[1] + percRafts_grad[2]), percRafts_grad[3]]
+
+counts_sox = Counter(df_grad['SOX2_Center'].tolist())
+sox = list(counts_sox.keys())
+percRafts_sox = [(x / 50 * 100) for x in list(counts_sox.values())]
+
+#%%
+pxSize = 1.7 # um/px
+
+maskDir = Path(r'C:\Users\MVX\OneDrive - UW\Allbritton Lab\Allbritton-Bagheri\250623_R2GLR_0-48hrBMP4_0%&100%aneu_5_Analysis\Individual Raft Images\Masks')
+df_grad_filt = df_grad[
+    (df_grad['SOX2_Center'] == 'Yes') & (df_grad['Grade'] != 'Border')
+]
+rafts = df_grad_filt['Raft'].tolist()
+
+rafts_list = []
+channels_list = []
+feats_list = []
+values_list = []
+
+channels = ['ROI', 'SOX2']
+
+for raft in rafts:
+    mask_roi = io.imread(maskDir / f'array1_raft{raft:03}_mask_roi.tif')
+    mask_sox = io.imread(maskDir / f'array1_raft{raft:03}_mask_sox.tif')
+    masks = [(mask_roi > 0), (mask_sox > 0)]
+
+    for i, mask in enumerate(masks):
+        labels = label(mask)
+        props = regionprops_table(labels,
+                                  properties=('axis_major_length',
+                                              'axis_minor_length',
+                                              'eccentricity')
+                                  )
+        df_measure = pd.DataFrame(props)
+        radius = ((df_measure.loc[0]['axis_major_length'] + df_measure.loc[0]['axis_minor_length']) / 2) / 2 * pxSize
+        eccen = df_measure.loc[0]['eccentricity']
+
+        for j in range(2):
+            rafts_list.append(raft)
+            channels_list.append(channels[i])
+        feats_list.append('Radius')
+        values_list.append(radius)
+        feats_list.append('Eccen')
+        values_list.append(eccen)
+
+df_feats = pd.DataFrame({
+    'Raft': rafts_list,
+    'Channel': channels_list,
+    'Feature': feats_list,
+    'Value': values_list
+}
+                        )
+
+#%%
+channels_list2 = []
+feats_list2 = []
+means_list = []
+stdevs_list = []
+
+feats = ['Eccen', 'Radius']
+
+for ch in channels:
+    for feat in feats:
+        df_sub = df_feats[(df_feats['Channel'] == ch) &
+                          (df_feats['Feature'] == feat)]
+        mean = np.mean(df_sub['Value'].tolist())
+        stdev = np.std(df_sub['Value'].tolist())
+
+        channels_list2.append(ch)
+        feats_list2.append(feat)
+        means_list.append(mean)
+        stdevs_list.append(stdev)
+
+df_feats_mean = pd.DataFrame({
+    'Channel': channels_list2,
+    'Feature': feats_list2,
+    'Mean': means_list,
+    'Stdev': stdevs_list
+})
+
+#%%
+df_feats.to_csv(dataDir / 'Endpoint Gastruloid Analysis.csv', index=False)
+df_feats_mean.to_csv(dataDir / 'Endpoint Gastruloid Analysis_Means.csv', index=False)
+
+#%%
+plt.rcdefaults()
+sns.set_theme(style='white', font_scale=1.25)
+plt.rcParams['ytick.left'] = True
+fig, axes = plt.subplots(1, 2, figsize=(8, 4))
+
+for idx, feat in enumerate(feats):
+    df_sub = df_feats[df_feats['Feature'] == feat]
+    df_sub = df_sub.reset_index(drop=True)
+    df_mean_sub = df_feats_mean[df_feats_mean['Feature'] == feat]
+    df_mean_sub = df_mean_sub.reset_index(drop=True)
+
+    sns.stripplot(ax=axes[idx],
+                  x='Channel',
+                  y='Value',
+                  data=df_sub,
+                  size=5,
+                  alpha=1,
+                  color="gray",
+                  jitter=0.3,
+                  legend=False,
+                  zorder=2)
+    axes[idx].errorbar(x=df_mean_sub['Channel'],
+                  y=df_mean_sub['Mean'],
+                  yerr=df_mean_sub['Stdev'],
+                  fmt='none',
+                  color='black',
+                  capsize=20,
+                  capthick=2,
+                  linewidth=2,
+                  zorder=1)
+    for i, row in df_mean_sub.iterrows():
+        axes[idx].hlines(y=row['Mean'],
+                    xmin=(i - 0.45),
+                    xmax=(i + 0.45),
+                    colors='black',
+                    linewidth=2,
+                    zorder=2)
+
+    axes[idx].set_xticks([0, 1], ['ROI', 'SOX2'], fontweight='bold')
+    axes[idx].set_xlabel('')
+
+axes[0].set_ylabel('Eccentricity', fontweight='bold')
+axes[1].set_ylabel('Radius (μm)', fontweight='bold')
+
+plt.tight_layout()
+plt.show()
+
+#%% [markdown]
+# MANUSCRIPT 1
+
+#%% [markdown]
 # Raft dimensions analysis.
 
 #%%

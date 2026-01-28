@@ -44,7 +44,7 @@ channels_list = []
 feats_list = []
 values_list = []
 
-channels = ['ROI', 'SOX2']
+channels = ['Full', 'SOX2']
 
 for raft in rafts:
     mask_roi = io.imread(maskDir / f'array1_raft{raft:03}_mask_roi.tif')
@@ -148,7 +148,7 @@ for idx, feat in enumerate(feats):
                     linewidth=2,
                     zorder=2)
 
-    axes[idx].set_xticks([0, 1], ['ROI', 'SOX2'], fontweight='bold')
+    axes[idx].set_xticks([0, 1], ['Full', 'SOX2'], fontweight='bold')
     axes[idx].set_xlabel('')
 
 axes[0].set_ylabel('Eccentricity', fontweight='bold')
